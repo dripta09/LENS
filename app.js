@@ -65,7 +65,7 @@ function rHome() {
   document.getElementById('hero-sub').textContent = s.heroSub || '';
   document.getElementById('home-about-name').textContent = s.name || 'Your Name';
   document.getElementById('home-about-bio').textContent = s.bio || '';
-  document.getElementById('ft-txt').textContent = '© ' + new Date().getFullYear() + ' ' + (s.name || 'LENS') + ' — All Rights Reserved';
+  document.getElementById('ft-txt').textContent = '© ' + new Date().getFullYear() + ' ' + (s.name || 'Lens') + ' — All Rights Reserved';
 
   const tags = (s.skills || '').split(',').map(x => x.trim()).filter(Boolean);
   document.getElementById('home-tags').innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join('');
@@ -79,20 +79,32 @@ function rHome() {
   const allPhotos = gP();
   const featured = allPhotos.filter(p => p.featured);
   const photos = featured.length >= 3 ? featured.slice(0, 3) : allPhotos.slice(0, 3);
+  // Set lbPhotos so lightbox works from featured section
+  lbPhotos = allPhotos;
   const feat = document.getElementById('home-feat');
   if (!photos.length) {
     feat.innerHTML = `<div class="feat-main"><div class="feat-placeholder">📷</div></div><div class="feat-side"><div class="feat-placeholder">📷</div></div><div class="feat-side"><div class="feat-placeholder">📷</div></div>`;
+    // Blog preview (no photos case)
+    const posts = gB().filter(p => p.status === 'published').slice(0, 2);
+    document.getElementById('home-blog').innerHTML = posts.length
+      ? posts.map(blogRow).join('')
+      : `<p style="color:var(--muted);font-size:0.88rem">No posts yet.</p>`;
     return;
   }
 
   let html = '';
   const heroP = photos[0];
-  html += `<div class="feat-main" onclick="lbOpen(${0})"><img class="feat-img" src="${heroP.url}" alt="${heroP.caption || ''}" onerror="this.parentElement.innerHTML='<div class=\\'feat-placeholder\\'>📷</div>'"><div class="feat-overlay"></div><div class="feat-label"><div class="feat-label-cat">${heroP.category || 'Featured'}</div><div class="feat-label-title">${heroP.caption || 'Untitled'}</div></div></div>`;
+  const heroIdx = allPhotos.indexOf(heroP);
+  html += `<div class="feat-main" onclick="lbOpen(${heroIdx})"><img class="feat-img" src="${heroP.url}" alt="${heroP.caption || ''}" onerror="this.parentElement.innerHTML='<div class=\\'feat-placeholder\\'>📷</div>'"><div class="feat-overlay"></div><div class="feat-label"><div class="feat-label-cat">${heroP.category || 'Featured'}</div><div class="feat-label-title">${heroP.caption || 'Untitled'}</div></div></div>`;
 
   [1, 2].forEach(i => {
     const ph = photos[i];
-    if (ph) html += `<div class="feat-side" onclick="lbOpen(${i})"><img class="feat-img" src="${ph.url}" alt="${ph.caption || ''}" onerror="this.parentElement.innerHTML='<div class=\\'feat-placeholder\\'>📷</div>'"><div class="feat-overlay"></div><div class="feat-label"><div class="feat-label-cat">${ph.category || 'Gallery'}</div><div class="feat-label-title">${ph.caption || ''}</div></div></div>`;
-    else html += `<div class="feat-side"><div class="feat-placeholder">📷</div></div>`;
+    if (ph) {
+      const realIdx = allPhotos.indexOf(ph);
+      html += `<div class="feat-side" onclick="lbOpen(${realIdx})"><img class="feat-img" src="${ph.url}" alt="${ph.caption || ''}" onerror="this.parentElement.innerHTML='<div class=\\'feat-placeholder\\'>📷</div>'"><div class="feat-overlay"></div><div class="feat-label"><div class="feat-label-cat">${ph.category || 'Gallery'}</div><div class="feat-label-title">${ph.caption || ''}</div></div></div>`;
+    } else {
+      html += `<div class="feat-side"><div class="feat-placeholder">📷</div></div>`;
+    }
   });
   feat.innerHTML = html;
 
@@ -329,6 +341,14 @@ function rAdmPhotos() {
 
   // Category manager
   renderCatManager(cats, photos);
+
+  // Populate upload category dropdown
+  const phCatSel = document.getElementById('ph-cat');
+  if (phCatSel) {
+    let phOpts = '<option value="">— None —</option>';
+    cats.forEach(c => { phOpts += `<option value="${esc(c)}">${c}</option>`; });
+    phCatSel.innerHTML = phOpts;
+  }
 
   // Toolbar: category filter dropdown
   const filterSel = document.getElementById('mm-filter-cat');
