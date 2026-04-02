@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LENS</title>
+  <title>Lens</title>
   <meta name="description"
-    content="LENS — A premium photography portfolio showcasing portraits, landscapes, and visual stories through the lens.">
+    content="Lens — A premium photography portfolio showcasing portraits, landscapes, and visual stories through the lens.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Barlow:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500&display=swap"
@@ -18,7 +18,7 @@
 
   <!-- ═══════════════ NAV ═══════════════ -->
   <nav id="nav">
-    <div class="nav-brand" onclick="go('home')">LENS<span>.</span></div>
+    <div class="nav-brand" onclick="go('home')">Lens<span>.</span></div>
     <div class="nav-links">
       <button class="nl on" id="nl-home" onclick="go('home')">Home</button>
       <button class="nl" id="nl-gallery" onclick="go('gallery')">Gallery</button>
@@ -125,7 +125,7 @@
     </div>
 
     <footer>
-      <div class="ft-brand">LENS<span>.</span></div>
+      <div class="ft-brand">Lens<span>.</span></div>
       <div class="ft-right" id="ft-txt">© 2025 — All Rights Reserved</div>
     </footer>
   </div>
@@ -552,29 +552,6 @@
   <div id="toast"></div>
 
   <script src="js/app.js"></script>
-  <script>
-    // Populate the photo upload category dropdown with saved categories
-    function populatePhCatDropdown() {
-      const cats = gC();
-      const sel = document.getElementById('ph-cat');
-      if (!sel) return;
-      let opts = '<option value="">— None —</option>';
-      cats.forEach(c => { opts += `<option value="${c}">${c}</option>`; });
-      sel.innerHTML = opts;
-    }
-
-    // Override aSection to also populate the category dropdown
-    const _origASection = aSection;
-    aSection = function (id) {
-      _origASection(id);
-      if (id === 'photos') populatePhCatDropdown();
-    };
-
-    // Also populate on initial load if needed
-    document.addEventListener('DOMContentLoaded', () => {
-      populatePhCatDropdown();
-    });
-  </script>
 </body>
 
 </html>
