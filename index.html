@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LENS — Photography</title>
+<meta name="description" content="LENS — A premium photography portfolio showcasing portraits, landscapes, and visual stories through the lens.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Barlow:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ═══════════════ NAV ═══════════════ -->
+<nav id="nav">
+  <div class="nav-brand" onclick="go('home')">LENS<span>.</span></div>
+  <div class="nav-links">
+    <button class="nl on" id="nl-home" onclick="go('home')">Home</button>
+    <button class="nl" id="nl-gallery" onclick="go('gallery')">Gallery</button>
+    <button class="nl" id="nl-blog" onclick="go('blog')">Journal</button>
+    <button class="nl" id="nl-about" onclick="go('about')">About</button>
+    <button class="nl nl-admin" id="nl-admin" onclick="go('admin')">Admin</button>
+  </div>
+  <button class="nav-ham" onclick="toggleMobileNav()">☰</button>
+</nav>
+<div class="nav-mobile" id="nav-mobile" style="display:none">
+  <button class="nl" onclick="go('home');toggleMobileNav()">Home</button>
+  <button class="nl" onclick="go('gallery');toggleMobileNav()">Gallery</button>
+  <button class="nl" onclick="go('blog');toggleMobileNav()">Journal</button>
+  <button class="nl" onclick="go('about');toggleMobileNav()">About</button>
+  <button class="nl nl-admin" onclick="go('admin');toggleMobileNav()">Admin</button>
+</div>
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div class="pg on" id="pg-home">
+
+  <!-- Hero -->
+  <section id="hero">
+    <div class="hero-bg" id="hero-bg">
+      <div style="width:100%;height:100%;background:radial-gradient(ellipse at 30% 60%,#1a1510 0%,#080808 100%)"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow" id="hero-eyebrow">Photography</div>
+      <h1 class="hero-h1" id="hero-h1">Capturing<br><em>Light &</em><br>Stillness</h1>
+      <p class="hero-sub" id="hero-sub">Visual stories told through the lens — portraits, landscapes, and the quiet in-between moments.</p>
+      <div class="hero-ctas">
+        <button class="btn-gld" onclick="go('gallery')">View Gallery</button>
+        <button class="btn-ghost" onclick="go('blog')">Read Journal</button>
+      </div>
+    </div>
+    <div class="hero-scroll-hint"><div class="scroll-line"></div>Scroll</div>
+  </section>
+
+  <!-- Featured Photos -->
+  <div class="section">
+    <div class="wrap">
+      <div class="sh">
+        <div class="sh-left">
+          <div class="sh-eyebrow">Selected Work</div>
+          <h2 class="sh-title">Featured <em style="font-style:italic;color:var(--gold)">Shots</em></h2>
+        </div>
+        <button class="sh-link" onclick="go('gallery')">Full Gallery →</button>
+      </div>
+      <div class="feat-grid" id="home-feat"></div>
+    </div>
+  </div>
+
+  <!-- Journal Preview -->
+  <div class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="sh">
+        <div class="sh-left">
+          <div class="sh-eyebrow">Journal</div>
+          <h2 class="sh-title">Latest <em style="font-style:italic;color:var(--gold)">Writing</em></h2>
+        </div>
+        <button class="sh-link" onclick="go('blog')">All Posts →</button>
+      </div>
+      <div id="home-blog"></div>
+    </div>
+  </div>
+
+  <!-- About Strip -->
+  <div class="about-strip" id="home-about-strip">
+    <div class="about-img-wrap" id="home-about-img">
+      <div class="about-img-ph">📷</div>
+    </div>
+    <div class="about-text">
+      <div class="about-eyebrow">About the Photographer</div>
+      <h2 class="about-h2" id="home-about-name">Your Name</h2>
+      <p class="about-bio-txt" id="home-about-bio">Update your bio in Admin → Settings.</p>
+      <div class="tag-row" id="home-tags"></div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap">
+        <button class="btn-gld" onclick="go('gallery')">See My Work</button>
+        <button class="btn-ghost" onclick="document.getElementById('contact-section').scrollIntoView({behavior:'smooth'});go('home')">Get in Touch</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="contact-strip" id="contact-section">
+    <div class="wrap">
+      <h2>Let's <em style="font-style:italic;color:var(--gold)">Work Together</em></h2>
+      <p id="home-contact-sub">Available for commissions, collaborations, and licensing.</p>
+      <div class="contact-form-wrap">
+        <div class="cf-row">
+          <input class="cf-input" id="cf-name" placeholder="Your Name">
+          <input class="cf-input" id="cf-email" placeholder="Email Address">
+        </div>
+        <textarea class="cf-ta" id="cf-msg" placeholder="Tell me about your project..."></textarea>
+        <button class="btn-gld" style="width:100%" onclick="sendMsg()">Send Message</button>
+        <div class="cf-success" id="cf-ok">✦ Message received — I'll be in touch.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="ft-brand">LENS<span>.</span></div>
+    <div class="ft-right" id="ft-txt">© 2025 — All Rights Reserved</div>
+  </footer>
+</div>
+
+<!-- ═══════════════ GALLERY ═══════════════ -->
+<div class="pg" id="pg-gallery" style="padding-top:64px">
+  <div class="section">
+    <div class="wrap">
+      <div class="sh">
+        <div class="sh-left">
+          <div class="sh-eyebrow">Portfolio</div>
+          <h2 class="sh-title">The <em style="font-style:italic;color:var(--gold)">Gallery</em></h2>
+        </div>
+      </div>
+      <div class="masonry" id="gallery-masonry"></div>
+      <div class="empty-st" id="gallery-empty" style="display:none">
+        <div class="ei">📷</div>
+        <p>No photos yet. Add some from Admin → Photos.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ BLOG LIST ═══════════════ -->
+<div class="pg" id="pg-blog" style="padding-top:64px">
+  <div class="section">
+    <div class="wrap">
+      <div class="sh">
+        <div class="sh-left">
+          <div class="sh-eyebrow">Photography Journal</div>
+          <h2 class="sh-title">All <em style="font-style:italic;color:var(--gold)">Posts</em></h2>
+        </div>
+      </div>
+      <div class="blog-list" id="blog-list"></div>
+      <div class="empty-st" id="blog-empty" style="display:none">
+        <div class="ei">✍️</div>
+        <p>No posts yet. Write your first in Admin → New Post.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SINGLE POST ═══════════════ -->
+<div class="pg" id="pg-post">
+  <div class="post-hero" id="post-hero">
+    <div class="post-hero-bg" id="post-hero-bg">
+      <div style="width:100%;height:100%;background:linear-gradient(135deg,#12100e,#080808)"></div>
+    </div>
+    <div class="post-hero-content">
+      <div class="post-eyebrow" id="post-eyebrow">Journal</div>
+      <h1 class="post-h1" id="post-h1"></h1>
+      <div class="post-byline" id="post-byline"></div>
+    </div>
+  </div>
+  <div class="post-body-wrap">
+    <button class="post-back" onclick="go('blog')">← Back to Journal</button>
+    <div class="post-body" id="post-body"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ ABOUT ═══════════════ -->
+<div class="pg" id="pg-about" style="padding-top:64px">
+  <div class="section">
+    <div class="wrap">
+      <div class="about-strip" style="max-width:1100px;margin:0 auto">
+        <div class="about-img-wrap" id="about-img-full">
+          <div class="about-img-ph">📷</div>
+        </div>
+        <div class="about-text">
+          <div class="about-eyebrow">The Photographer</div>
+          <h2 class="about-h2" id="about-name-full">Your Name</h2>
+          <p class="about-bio-txt" id="about-bio-full">Update your bio in Admin → Settings.</p>
+          <div class="tag-row" id="about-tags-full"></div>
+          <div style="margin-bottom:1.2rem">
+            <div style="font-family:var(--ff-cond);font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem">Email</div>
+            <div id="about-email" style="color:var(--gold);font-size:0.92rem"></div>
+          </div>
+          <div style="display:flex;gap:1rem">
+            <button class="btn-gld" onclick="go('gallery')">View Gallery</button>
+            <button class="btn-ghost" onclick="go('home');setTimeout(()=>document.getElementById('contact-section').scrollIntoView({behavior:'smooth'}),200)">Contact</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ADMIN ═══════════════ -->
+<div class="pg" id="pg-admin">
+  <div class="adm-wrap">
+
+    <!-- Login -->
+    <div class="adm-login" id="adm-login">
+      <div class="adm-login-box">
+        <h2>Admin Panel</h2>
+        <p>Sign in to manage your photography site</p>
+        <div class="ef-g"><label class="lbl">Password</label><input class="ef-inp" type="password" id="adm-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <button class="btn-a" style="width:100%" onclick="doLogin()">Sign In</button>
+        <div class="adm-err" id="adm-err">Incorrect password. Default: admin123</div>
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:1rem">Default password: <code style="background:var(--surface2);padding:2px 6px">admin123</code></p>
+      </div>
+    </div>
+
+    <!-- Panel -->
+    <div class="adm-panel" id="adm-panel" style="display:none">
+      <div class="adm-sb">
+        <div class="adm-sb-h">Content</div>
+        <button class="adm-sb-btn on" id="asb-dash" onclick="aSection('dash')">📊 Dashboard</button>
+        <button class="adm-sb-btn" id="asb-photos" onclick="aSection('photos')">🖼 Photos</button>
+        <button class="adm-sb-btn" id="asb-posts" onclick="aSection('posts')">✍️ Posts</button>
+        <button class="adm-sb-btn" id="asb-new-post" onclick="aSection('new-post')">＋ New Post</button>
+        <div class="adm-sb-h">Site</div>
+        <button class="adm-sb-btn" id="asb-settings" onclick="aSection('settings')">⚙ Settings</button>
+        <button class="adm-sb-btn" id="asb-messages" onclick="aSection('messages')">💬 Messages</button>
+        <div class="adm-sb-h">Session</div>
+        <button class="adm-sb-btn" onclick="doLogout()">🚪 Logout</button>
+      </div>
+      <div class="adm-main">
+
+        <!-- DASHBOARD -->
+        <div class="as on" id="as-dash">
+          <div class="adm-hdr"><h2>Dashboard</h2></div>
+          <div class="stat-row">
+            <div class="stat-c"><div class="sl">Photos</div><div class="sv" id="st-ph">0</div></div>
+            <div class="stat-c"><div class="sl">Posts</div><div class="sv" id="st-po">0</div></div>
+            <div class="stat-c"><div class="sl">Messages</div><div class="sv" id="st-ms">0</div></div>
+          </div>
+          <h3 style="font-family:var(--ff-serif);font-size:1.2rem;font-weight:300;margin-bottom:1rem;color:var(--muted2)">Recent Posts</h3>
+          <div id="dash-recent"></div>
+        </div>
+
+        <!-- PHOTOS -->
+        <div class="as" id="as-photos">
+          <div class="adm-hdr"><h2>Photos</h2></div>
+          <div class="ef-g" style="max-width:540px">
+            <label class="lbl">Add by URL</label>
+            <div style="display:flex;gap:0.5rem">
+              <input class="ef-inp" id="ph-url" placeholder="https://images.unsplash.com/...">
+              <button class="btn-a" onclick="addPhotoURL()">Add</button>
+            </div>
+          </div>
+          <div class="ef-g" style="max-width:540px">
+            <label class="lbl">Caption (optional)</label>
+            <input class="ef-inp" id="ph-cap" placeholder="Behind the waterfall, Iceland">
+          </div>
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" multiple accept="image/*" onchange="handleFiles(event)">
+            <p>📁 Drag & drop photos here, or click to browse</p>
+            <span>JPG · PNG · WEBP · GIF</span>
+          </div>
+          <div class="ph-grid" id="adm-ph-grid"></div>
+        </div>
+
+        <!-- POSTS -->
+        <div class="as" id="as-posts">
+          <div class="adm-hdr">
+            <h2>Blog Posts</h2>
+            <button class="btn-a" onclick="aSection('new-post')">+ New Post</button>
+          </div>
+          <table class="adm-tbl">
+            <thead><tr><th></th><th>Title</th><th>Category</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="posts-tbl"></tbody>
+          </table>
+          <div class="empty-st" id="posts-empty" style="display:none"><div class="ei">✍️</div><p>No posts yet.</p></div>
+        </div>
+
+        <!-- NEW POST -->
+        <div class="as" id="as-new-post">
+          <div class="adm-hdr"><h2 id="ed-title">New Post</h2></div>
+          <div style="max-width:800px">
+            <input type="hidden" id="ed-id">
+            <div class="ef-g"><label class="lbl">Title</label><input class="ef-inp" id="ed-ttl" placeholder="Post title..."></div>
+            <div class="ef-row">
+              <div class="ef-g"><label class="lbl">Category</label>
+                <select class="ef-sel" id="ed-cat">
+                  <option>Behind the Lens</option><option>Travel</option><option>Portraits</option>
+                  <option>Landscape</option><option>Technique</option><option>Gear</option><option>Personal</option>
+                </select>
+              </div>
+              <div class="ef-g"><label class="lbl">Status</label>
+                <select class="ef-sel" id="ed-status"><option value="published">Published</option><option value="draft">Draft</option></select>
+              </div>
+            </div>
+            <div class="ef-g"><label class="lbl">Cover Image URL</label><input class="ef-inp" id="ed-img" placeholder="https://images.unsplash.com/..."></div>
+            <div class="ef-g"><label class="lbl">Excerpt</label><input class="ef-inp" id="ed-exc" placeholder="Short summary shown in listing..."></div>
+            <div class="ef-g"><label class="lbl">Content (HTML supported)</label><textarea class="ef-ta" id="ed-body" placeholder="Write your post... Use &lt;h2&gt;, &lt;p&gt;, &lt;blockquote&gt;, &lt;img src=&quot;...&quot;&gt;, &lt;ul&gt; etc."></textarea></div>
+            <div class="ef-btns">
+              <button class="btn-a" onclick="savePost()">Save Post</button>
+              <button class="btn-a2" onclick="aSection('posts')">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="as" id="as-settings">
+          <div class="adm-hdr"><h2>Settings</h2></div>
+          <div class="s-form">
+            <div class="av-row">
+              <div class="av-circle" id="s-av-prev"><span>📷</span></div>
+              <div style="flex:1">
+                <div class="ef-g" style="margin-bottom:0">
+                  <label class="lbl">Choose Photo from Device</label>
+                  <div class="btn-upload" id="av-upload-btn">
+                    📁 Browse from device…
+                    <input type="file" accept="image/*" id="s-avatar-file" onchange="handleAvatarFile(event)">
+                  </div>
+                  <div class="av-file-name" id="av-file-name"></div>
+                  <div class="av-or">or paste a URL</div>
+                  <label class="lbl">Profile Photo URL</label>
+                  <input class="ef-inp" id="s-avatar" placeholder="https://...">
+                </div>
+              </div>
+            </div>
+            <div class="ef-g"><label class="lbl">Photographer Name</label><input class="ef-inp" id="s-name" placeholder="Your Full Name"></div>
+            <div class="ef-g"><label class="lbl">Tagline / Specialty</label><input class="ef-inp" id="s-tag" placeholder="Portrait · Landscape · Documentary"></div>
+            <div class="ef-g"><label class="lbl">Bio</label><textarea class="ef-ta" style="min-height:110px" id="s-bio" placeholder="Tell visitors about your photography..."></textarea></div>
+            <div class="ef-g"><label class="lbl">Specialties (comma separated)</label><input class="ef-inp" id="s-skills" placeholder="Portraits, Landscape, Travel, Street"></div>
+            <div class="ef-g"><label class="lbl">Email</label><input class="ef-inp" id="s-email" placeholder="you@email.com"></div>
+            <div class="ef-g"><label class="lbl">Hero Headline (HTML: use &lt;em&gt; for italic gold)</label><input class="ef-inp" id="s-hero" placeholder="Capturing&lt;br&gt;&lt;em&gt;Light &amp;&lt;/em&gt;&lt;br&gt;Stillness"></div>
+            <div class="ef-g"><label class="lbl">Hero Subtext</label><input class="ef-inp" id="s-hsub" placeholder="Visual stories told through the lens..."></div>
+            <div class="ef-g"><label class="lbl">Change Password</label><input class="ef-inp" type="password" id="s-pw" placeholder="Leave blank to keep current"></div>
+            <button class="btn-a" onclick="saveSettings()">Save All Changes</button>
+          </div>
+        </div>
+
+        <!-- MESSAGES -->
+        <div class="as" id="as-messages">
+          <div class="adm-hdr"><h2>Messages</h2></div>
+          <table class="adm-tbl">
+            <thead><tr><th>Name</th><th>Email</th><th>Message</th><th>Date</th><th></th></tr></thead>
+            <tbody id="msgs-tbl"></tbody>
+          </table>
+          <div class="empty-st" id="msgs-empty" style="display:none"><div class="ei">💬</div><p>No messages yet.</p></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lb">
+  <button id="lb-close" onclick="lbClose()">✕</button>
+  <button id="lb-prev" onclick="lbNav(-1)">‹</button>
+  <button id="lb-next" onclick="lbNav(1)">›</button>
+  <img id="lb-img" src="" alt="">
+  <div id="lb-caption"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
