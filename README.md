@@ -31,10 +31,9 @@ A premium, dark-themed photography portfolio website built with vanilla HTML, CS
 ```
 lens-photography/
 ├── index.html          # Main HTML structure
-├── css/
-│   └── style.css       # All styles (variables, components, responsive)
-├── js/
-│   └── app.js          # Application logic (routing, CRUD, admin)
+├── style.css       # All styles (variables, components, responsive)
+│   
+├── app.js          # Application logic (routing, CRUD, admin)
 └── README.md           # This file
 ```
 
