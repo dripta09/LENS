@@ -9,6 +9,8 @@ const DB = {
   s: (k, v) => localStorage.setItem(k, JSON.stringify(v))
 };
 
+const DEFAULT_CATEGORIES = ['All', 'Portraits', 'Landscape', 'Travel', 'Street', 'Nature', 'Architecture', 'Events'];
+
 const gS = () => DB.g('s_cfg') || {
   name: 'Your Name',
   tagline: 'Portrait · Landscape · Documentary',
@@ -24,6 +26,7 @@ const gS = () => DB.g('s_cfg') || {
 const gP = () => DB.g('s_photos') || [];
 const gB = () => DB.g('s_posts') || [];
 const gM = () => DB.g('s_msgs') || [];
+const gC = () => DB.g('s_photo_cats') || DEFAULT_CATEGORIES.slice(1); // exclude 'All'
 
 
 // ── ROUTING ──────────────────────────────────────────
@@ -72,8 +75,10 @@ function rHome() {
     ? `<img src="${s.avatar}" alt="${s.name}" style="width:100%;height:100%;object-fit:cover">`
     : `<div class="about-img-ph">📷</div>`;
 
-  // Featured grid
-  const photos = gP().slice(0, 3);
+  // Featured grid — show featured photos first, then latest
+  const allPhotos = gP();
+  const featured = allPhotos.filter(p => p.featured);
+  const photos = featured.length >= 3 ? featured.slice(0, 3) : allPhotos.slice(0, 3);
   const feat = document.getElementById('home-feat');
   if (!photos.length) {
     feat.innerHTML = `<div class="feat-main"><div class="feat-placeholder">📷</div></div><div class="feat-side"><div class="feat-placeholder">📷</div></div><div class="feat-side"><div class="feat-placeholder">📷</div></div>`;
@@ -82,11 +87,11 @@ function rHome() {
 
   let html = '';
   const heroP = photos[0];
-  html += `<div class="feat-main" onclick="lbOpen(${0})"><img class="feat-img" src="${heroP.url}" alt="${heroP.caption || ''}" onerror="this.parentElement.innerHTML='<div class=\\'feat-placeholder\\'>📷</div>'"><div class="feat-overlay"></div><div class="feat-label"><div class="feat-label-cat">Featured</div><div class="feat-label-title">${heroP.caption || 'Untitled'}</div></div></div>`;
+  html += `<div class="feat-main" onclick="lbOpen(${0})"><img class="feat-img" src="${heroP.url}" alt="${heroP.caption || ''}" onerror="this.parentElement.innerHTML='<div class=\\'feat-placeholder\\'>📷</div>'"><div class="feat-overlay"></div><div class="feat-label"><div class="feat-label-cat">${heroP.category || 'Featured'}</div><div class="feat-label-title">${heroP.caption || 'Untitled'}</div></div></div>`;
 
   [1, 2].forEach(i => {
     const ph = photos[i];
-    if (ph) html += `<div class="feat-side" onclick="lbOpen(${i})"><img class="feat-img" src="${ph.url}" alt="${ph.caption || ''}" onerror="this.parentElement.innerHTML='<div class=\\'feat-placeholder\\'>📷</div>'"><div class="feat-overlay"></div><div class="feat-label"><div class="feat-label-cat">Gallery</div><div class="feat-label-title">${ph.caption || ''}</div></div></div>`;
+    if (ph) html += `<div class="feat-side" onclick="lbOpen(${i})"><img class="feat-img" src="${ph.url}" alt="${ph.caption || ''}" onerror="this.parentElement.innerHTML='<div class=\\'feat-placeholder\\'>📷</div>'"><div class="feat-overlay"></div><div class="feat-label"><div class="feat-label-cat">${ph.category || 'Gallery'}</div><div class="feat-label-title">${ph.caption || ''}</div></div></div>`;
     else html += `<div class="feat-side"><div class="feat-placeholder">📷</div></div>`;
   });
   feat.innerHTML = html;
@@ -102,19 +107,47 @@ function rHome() {
 // ── GALLERY & LIGHTBOX ───────────────────────────────
 let lbPhotos = [];
 let lbIdx = 0;
+let galFilter = 'All';
 
 function rGallery() {
   const photos = gP();
-  lbPhotos = photos;
+  const cats = getUsedCategories(photos);
+
+  // Render filter tabs
+  const filterWrap = document.getElementById('gallery-filters');
+  const allCount = photos.length;
+  let filterHtml = `<button class="gal-filter${galFilter === 'All' ? ' on' : ''}" onclick="setGalFilter('All')">All <span class="filter-count">${allCount}</span></button>`;
+  cats.forEach(cat => {
+    const count = photos.filter(p => p.category === cat).length;
+    filterHtml += `<button class="gal-filter${galFilter === cat ? ' on' : ''}" onclick="setGalFilter('${esc(cat)}')">${cat} <span class="filter-count">${count}</span></button>`;
+  });
+  filterWrap.innerHTML = filterHtml;
+
+  // Filter photos
+  const filtered = galFilter === 'All' ? photos : photos.filter(p => p.category === galFilter);
+  lbPhotos = filtered;
+
   const el = document.getElementById('gallery-masonry');
   const em = document.getElementById('gallery-empty');
-  if (!photos.length) { el.innerHTML = ''; em.style.display = 'block'; return; }
+  if (!filtered.length) { el.innerHTML = ''; em.style.display = 'block'; return; }
   em.style.display = 'none';
-  el.innerHTML = photos.map((ph, i) => `<div class="m-item" onclick="lbOpen(${i})">
+  el.innerHTML = filtered.map((ph, i) => `<div class="m-item" onclick="lbOpen(${i})">
     <img src="${ph.url}" alt="${ph.caption || ''}" loading="lazy" onerror="this.parentElement.style.display='none'">
     <div class="m-overlay"><div class="m-zoom">+</div></div>
+    ${ph.category ? `<div class="m-cat-badge">${ph.category}</div>` : ''}
     ${ph.caption ? `<div class="m-caption">${ph.caption}</div>` : ''}
   </div>`).join('');
+}
+
+function setGalFilter(cat) {
+  galFilter = cat;
+  rGallery();
+}
+
+function getUsedCategories(photos) {
+  const set = new Set();
+  photos.forEach(p => { if (p.category) set.add(p.category); });
+  return Array.from(set).sort();
 }
 
 function lbOpen(i) { lbIdx = i; lbShow() }
@@ -218,6 +251,9 @@ function sendMsg() {
 
 // ── ADMIN ────────────────────────────────────────────
 let loggedIn = false;
+let mmView = 'grid'; // 'grid' or 'table'
+let mmFilterCat = 'All';
+let mmSearch = '';
 
 function doLogin() {
   const pw = document.getElementById('adm-pw').value;
@@ -272,9 +308,12 @@ function aSection(id) {
 
 // ── ADMIN: DASHBOARD ─────────────────────────────────
 function rDash() {
-  document.getElementById('st-ph').textContent = gP().length;
+  const photos = gP();
+  const cats = getUsedCategories(photos);
+  document.getElementById('st-ph').textContent = photos.length;
   document.getElementById('st-po').textContent = gB().length;
   document.getElementById('st-ms').textContent = gM().length;
+  document.getElementById('st-cat').textContent = cats.length;
   const recent = gB().slice(-3).reverse();
   document.getElementById('dash-recent').innerHTML = recent.length
     ? `<table class="adm-tbl"><thead><tr><th>Title</th><th>Status</th><th>Date</th></tr></thead><tbody>${recent.map(p => `<tr><td>${p.title}</td><td class="${p.status === 'published' ? 'pub' : 'dft'}">${p.status}</td><td>${fmtDate(p.date)}</td></tr>`).join('')}</tbody></table>`
@@ -282,22 +321,183 @@ function rDash() {
 }
 
 
-// ── ADMIN: PHOTOS ────────────────────────────────────
+// ── ADMIN: MEDIA MANAGER ─────────────────────────────
 function rAdmPhotos() {
   const photos = gP();
-  document.getElementById('adm-ph-grid').innerHTML = photos.map((ph, i) => `
-    <div class="ph-th">
-      <img src="${ph.url}" alt="${ph.caption || ''}" loading="lazy" onerror="this.parentElement.style.display='none'">
-      <button class="ph-del" onclick="delPhoto(${i})" title="Remove">✕</button>
-    </div>`).join('');
+  const cats = gC();
+  const usedCats = getUsedCategories(photos);
+
+  // Category manager
+  renderCatManager(cats, photos);
+
+  // Toolbar: category filter dropdown
+  const filterSel = document.getElementById('mm-filter-cat');
+  let filterOpts = '<option value="All">All Categories</option>';
+  cats.forEach(c => {
+    filterOpts += `<option value="${esc(c)}" ${mmFilterCat === c ? 'selected' : ''}>${c}</option>`;
+  });
+  // Also add any used categories not in the managed list
+  usedCats.forEach(c => {
+    if (!cats.includes(c)) filterOpts += `<option value="${esc(c)}" ${mmFilterCat === c ? 'selected' : ''}>${c} ⚠</option>`;
+  });
+  filterSel.innerHTML = filterOpts;
+
+  // Search
+  document.getElementById('mm-search').value = mmSearch;
+
+  // View toggle
+  document.querySelectorAll('.mm-view-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.view === mmView);
+  });
+
+  // Filter & search photos
+  let filtered = photos;
+  if (mmFilterCat !== 'All') filtered = filtered.filter(p => p.category === mmFilterCat);
+  if (mmSearch) {
+    const q = mmSearch.toLowerCase();
+    filtered = filtered.filter(p => (p.caption || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
+  }
+
+  // Stats
+  const featured = photos.filter(p => p.featured).length;
+  const uncategorized = photos.filter(p => !p.category).length;
+  document.getElementById('mm-stats').innerHTML = `
+    <span class="mm-stat"><strong>${photos.length}</strong> Total</span>
+    <span class="mm-stat"><strong>${featured}</strong> Featured</span>
+    <span class="mm-stat"><strong>${usedCats.length}</strong> Categories</span>
+    ${uncategorized ? `<span class="mm-stat"><strong>${uncategorized}</strong> Uncategorized</span>` : ''}
+  `;
+
+  // Render grid or table
+  const container = document.getElementById('mm-content');
+  const emptyEl = document.getElementById('photos-empty');
+
+  if (!filtered.length) {
+    container.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  if (mmView === 'grid') {
+    container.innerHTML = `<div class="mm-grid">${filtered.map((ph, i) => {
+      const realIdx = photos.indexOf(ph);
+      return mmCardHtml(ph, realIdx);
+    }).join('')}</div>`;
+  } else {
+    container.innerHTML = `<table class="adm-tbl">
+      <thead><tr><th></th><th>Caption</th><th>Category</th><th>Featured</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody>${filtered.map(ph => {
+        const realIdx = photos.indexOf(ph);
+        return `<tr>
+          <td><img class="tbl-thumb" src="${ph.url}" onerror="this.style.display='none'" alt=""></td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ph.caption || '<span style="color:var(--muted);font-style:italic">No caption</span>'}</td>
+          <td>${ph.category ? `<span class="mm-cat-label">${ph.category}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+          <td>${ph.featured ? '<span class="mm-featured-badge">★ Yes</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+          <td style="color:var(--muted);white-space:nowrap">${fmtDate(ph.date)}</td>
+          <td style="white-space:nowrap">
+            <button class="btn-ed" onclick="openPhotoEdit(${realIdx})">Edit</button>
+            <button class="btn-del" onclick="delPhoto(${realIdx})">Del</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
 }
 
+function mmCardHtml(ph, idx) {
+  const captionClass = ph.caption ? '' : ' empty';
+  const captionText = ph.caption || 'No caption — click edit to add';
+  return `<div class="mm-card">
+    <div class="mm-card-img" onclick="lbPhotos=gP();lbIdx=${idx};lbShow()">
+      <img src="${ph.url}" alt="${ph.caption || ''}" loading="lazy" onerror="this.style.display='none'">
+    </div>
+    <div class="mm-card-body">
+      <div class="mm-card-caption${captionClass}">${captionText}</div>
+      ${ph.category ? `<div class="mm-card-cat"><span class="mm-cat-label">${ph.category}</span></div>` : ''}
+      <div class="mm-card-meta">
+        <span class="mm-card-date">${ph.featured ? '★ ' : ''}${fmtDate(ph.date)}</span>
+        <div class="mm-card-actions">
+          <button onclick="openPhotoEdit(${idx})" title="Edit">✎</button>
+          <button class="mm-act-del" onclick="delPhoto(${idx})" title="Delete">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setMMView(view) {
+  mmView = view;
+  rAdmPhotos();
+}
+
+function setMMFilter() {
+  mmFilterCat = document.getElementById('mm-filter-cat').value;
+  rAdmPhotos();
+}
+
+function setMMSearch() {
+  mmSearch = document.getElementById('mm-search').value;
+  rAdmPhotos();
+}
+
+
+// ── CATEGORY MANAGER ─────────────────────────────────
+function renderCatManager(cats, photos) {
+  const el = document.getElementById('cat-manager-list');
+  el.innerHTML = cats.map(c => {
+    const count = photos.filter(p => p.category === c).length;
+    return `<span class="cat-pill">
+      ${c} <span class="cat-count">(${count})</span>
+      <button class="cat-pill-del" onclick="removeCat('${esc(c)}')" title="Remove category">✕</button>
+    </span>`;
+  }).join('');
+}
+
+function addCat() {
+  const inp = document.getElementById('cat-new-name');
+  const name = inp.value.trim();
+  if (!name) return;
+  const cats = gC();
+  if (cats.some(c => c.toLowerCase() === name.toLowerCase())) {
+    toast('Category already exists.');
+    return;
+  }
+  cats.push(name);
+  DB.s('s_photo_cats', cats);
+  inp.value = '';
+  rAdmPhotos();
+  toast('Category added!');
+}
+
+function removeCat(name) {
+  const photos = gP();
+  const count = photos.filter(p => p.category === name).length;
+  const msg = count > 0
+    ? `Remove "${name}"? ${count} photo(s) will become uncategorized.`
+    : `Remove category "${name}"?`;
+  if (!confirm(msg)) return;
+  // Remove from categories list
+  const cats = gC().filter(c => c !== name);
+  DB.s('s_photo_cats', cats);
+  // Remove category from photos
+  if (count > 0) {
+    const updated = photos.map(p => p.category === name ? { ...p, category: '' } : p);
+    DB.s('s_photos', updated);
+  }
+  rAdmPhotos();
+  toast('Category removed.');
+}
+
+
+// ── PHOTO ADD / UPLOAD ───────────────────────────────
 function addPhotoURL() {
   const url = document.getElementById('ph-url').value.trim();
   if (!url) { alert('Enter a URL.'); return; }
   const cap = document.getElementById('ph-cap').value.trim();
+  const cat = document.getElementById('ph-cat').value;
   const p = gP();
-  p.push({ url, caption: cap, date: new Date().toISOString() });
+  p.push({ id: uid(), url, caption: cap, category: cat, featured: false, date: new Date().toISOString() });
   DB.s('s_photos', p);
   document.getElementById('ph-url').value = '';
   document.getElementById('ph-cap').value = '';
@@ -307,11 +507,19 @@ function addPhotoURL() {
 
 function handleFiles(e) {
   const p = gP();
+  const cat = document.getElementById('ph-cat').value;
   let c = 0;
   Array.from(e.target.files).forEach(f => {
     const r = new FileReader();
     r.onload = ev => {
-      p.push({ url: ev.target.result, caption: f.name.replace(/\.[^.]+$/, ''), date: new Date().toISOString() });
+      p.push({
+        id: uid(),
+        url: ev.target.result,
+        caption: f.name.replace(/\.[^.]+$/, ''),
+        category: cat,
+        featured: false,
+        date: new Date().toISOString()
+      });
       DB.s('s_photos', p);
       c++;
       if (c === e.target.files.length) {
@@ -331,6 +539,66 @@ function delPhoto(i) {
   rAdmPhotos();
   toast('Removed.');
 }
+
+
+// ── PHOTO EDIT MODAL ─────────────────────────────────
+let editingPhotoIdx = -1;
+
+function openPhotoEdit(idx) {
+  editingPhotoIdx = idx;
+  const photos = gP();
+  const ph = photos[idx];
+  if (!ph) return;
+
+  document.getElementById('pe-preview').innerHTML = `<img src="${ph.url}" alt="">`;
+  document.getElementById('pe-caption').value = ph.caption || '';
+  document.getElementById('pe-featured').checked = !!ph.featured;
+
+  // Populate category dropdown
+  const cats = gC();
+  const sel = document.getElementById('pe-category');
+  let opts = '<option value="">— None —</option>';
+  cats.forEach(c => {
+    opts += `<option value="${esc(c)}" ${ph.category === c ? 'selected' : ''}>${c}</option>`;
+  });
+  // If current category isn't in the list, still show it
+  if (ph.category && !cats.includes(ph.category)) {
+    opts += `<option value="${esc(ph.category)}" selected>${ph.category}</option>`;
+  }
+  sel.innerHTML = opts;
+
+  document.getElementById('pe-date').textContent = fmtDate(ph.date);
+  document.getElementById('pe-size').textContent = ph.url.startsWith('data:')
+    ? formatBytes(ph.url.length * 0.75)
+    : 'External URL';
+
+  document.getElementById('photo-edit-modal').classList.add('on');
+}
+
+function closePhotoEdit() {
+  document.getElementById('photo-edit-modal').classList.remove('on');
+  editingPhotoIdx = -1;
+}
+
+function savePhotoEdit() {
+  if (editingPhotoIdx < 0) return;
+  const photos = gP();
+  const ph = photos[editingPhotoIdx];
+  ph.caption = document.getElementById('pe-caption').value.trim();
+  ph.category = document.getElementById('pe-category').value;
+  ph.featured = document.getElementById('pe-featured').checked;
+  DB.s('s_photos', photos);
+  closePhotoEdit();
+  rAdmPhotos();
+  toast('Photo updated!');
+}
+
+// Close modal on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('photo-edit-modal').classList.contains('on')) {
+    closePhotoEdit();
+  }
+});
 
 
 // ── ADMIN: POSTS ─────────────────────────────────────
@@ -493,6 +761,16 @@ function fmtDate(d) {
 
 function strip(h) {
   return h ? (h.replace ? h.replace(/<[^>]*>/g, '') : '') : '';
+}
+
+function esc(str) {
+  return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
 function toast(msg) {
