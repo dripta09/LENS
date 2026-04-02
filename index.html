@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lens</title>
+  <title>LENS</title>
   <meta name="description"
     content="Lens — A premium photography portfolio showcasing portraits, landscapes, and visual stories through the lens.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,13 +12,14 @@
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Barlow:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 </head>
 
 <body>
 
   <!-- ═══════════════ NAV ═══════════════ -->
   <nav id="nav">
-    <div class="nav-brand" onclick="go('home')">Lens<span>.</span></div>
+    <div class="nav-brand" onclick="go('home')"><img src="lens-logo.png" alt="" class="nav-logo">LENS<span>.</span></div>
     <div class="nav-links">
       <button class="nl on" id="nl-home" onclick="go('home')">Home</button>
       <button class="nl" id="nl-gallery" onclick="go('gallery')">Gallery</button>
@@ -125,7 +126,7 @@
     </div>
 
     <footer>
-      <div class="ft-brand">Lens<span>.</span></div>
+      <div class="ft-brand"><img src="lens-logo.png" alt="" class="ft-logo">LENS<span>.</span></div>
       <div class="ft-right" id="ft-txt">© 2025 — All Rights Reserved</div>
     </footer>
   </div>
@@ -551,6 +552,26 @@
   <!-- TOAST -->
   <div id="toast"></div>
 
+  <!-- AVATAR CROP MODAL -->
+  <div class="modal-overlay" id="crop-modal" onclick="if(event.target===this)closeCrop()">
+    <div class="modal-box" style="max-width:500px">
+      <div class="modal-top">
+        <h3>Crop Profile Photo</h3>
+        <button class="modal-close" onclick="closeCrop()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="crop-container">
+          <img id="crop-img" src="">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-a2" onclick="closeCrop()">Cancel</button>
+        <button class="btn-a" onclick="applyCrop()">Apply & Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   <script src="app.js"></script>
 </body>
 
