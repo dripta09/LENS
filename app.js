@@ -65,7 +65,7 @@ function rHome() {
   document.getElementById('hero-sub').textContent = s.heroSub || '';
   document.getElementById('home-about-name').textContent = s.name || 'Your Name';
   document.getElementById('home-about-bio').textContent = s.bio || '';
-  document.getElementById('ft-txt').textContent = '© ' + new Date().getFullYear() + ' ' + (s.name || 'Lens') + ' — All Rights Reserved';
+  document.getElementById('ft-txt').textContent = '© ' + new Date().getFullYear() + ' ' + (s.name || 'LENS') + ' — All Rights Reserved';
 
   const tags = (s.skills || '').split(',').map(x => x.trim()).filter(Boolean);
   document.getElementById('home-tags').innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join('');
@@ -713,19 +713,58 @@ function loadSettings() {
   document.getElementById('av-file-name').textContent = '';
 }
 
+let cropper = null;
+
 function handleAvatarFile(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function (ev) {
-    const dataUrl = ev.target.result;
-    document.getElementById('s-avatar').value = dataUrl;
-    const av = document.getElementById('s-av-prev');
-    av.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-    document.getElementById('av-file-name').textContent = '✦ ' + file.name;
-    toast('Photo loaded — click Save All Changes to apply.');
+    const modal = document.getElementById('crop-modal');
+    const img = document.getElementById('crop-img');
+    img.src = ev.target.result;
+    modal.classList.add('on');
+    if (cropper) cropper.destroy();
+    setTimeout(() => {
+      cropper = new Cropper(img, {
+        aspectRatio: 1,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.8,
+        restore: false,
+        guides: true,
+        center: true,
+        highlight: false,
+        cropBoxMovable: true,
+        cropBoxResizable: true,
+        toggleDragModeOnDblclick: false,
+      });
+    }, 100);
   };
   reader.readAsDataURL(file);
+}
+
+function closeCrop() {
+  document.getElementById('crop-modal').classList.remove('on');
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
+  }
+}
+
+function applyCrop() {
+  if (!cropper) return;
+  const canvas = cropper.getCroppedCanvas({
+    width: 400,
+    height: 400
+  });
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  document.getElementById('s-avatar').value = dataUrl;
+  const av = document.getElementById('s-av-prev');
+  av.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  document.getElementById('av-file-name').textContent = '✦ (Cropped image ready)';
+  closeCrop();
+  toast('Photo cropped! Click "Save All Changes" below to finish.');
 }
 
 function saveSettings() {
