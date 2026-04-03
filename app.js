@@ -6,7 +6,10 @@
 // ── DATA LAYER ───────────────────────────────────────
 const DB = {
   g: k => { try { return JSON.parse(localStorage.getItem(k)) } catch { return null } },
-  s: (k, v) => localStorage.setItem(k, JSON.stringify(v))
+  s: (k, v) => {
+    localStorage.setItem(k, JSON.stringify(v));
+    updateStorageUsage();
+  }
 };
 
 const DEFAULT_CATEGORIES = ['All', 'Portraits', 'Landscape', 'Travel', 'Street', 'Nature', 'Architecture', 'Events'];
@@ -514,21 +517,55 @@ function removeCat(name) {
 
 
 // ── PHOTO ADD / UPLOAD ───────────────────────────────
-function addPhotoURL() {
-  const url = document.getElementById('ph-url').value.trim();
+// ── PHOTO ADD / UPLOAD ───────────────────────────────
+async function resImg(dataUrl, maxW, maxH, q = 0.8) {
+  if (dataUrl.startsWith('data:image/svg+xml')) return dataUrl; // Don't resize SVGs
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+      if (w > maxW || h > maxH) {
+        const r = Math.min(maxW / w, maxH / h);
+        w *= r; h *= r;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', q));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+async function addPhotoURL() {
+  let url = document.getElementById('ph-url').value.trim();
   if (!url) { alert('Enter a URL.'); return; }
+  
+  if (url.startsWith('http')) {
+    // If external URL, we ideally want to resize it too if we "import" it
+    // But for now purely URL-based references stay as is.
+  }
+
   const cap = document.getElementById('ph-cap').value.trim();
   const cat = document.getElementById('ph-cat').value;
   const p = gP();
   p.push({ id: uid(), url, caption: cap, category: cat, featured: false, date: new Date().toISOString() });
-  DB.s('s_photos', p);
-  document.getElementById('ph-url').value = '';
-  document.getElementById('ph-cap').value = '';
-  rAdmPhotos();
-  toast('Photo added!');
+  
+  try {
+    DB.s('s_photos', p);
+    document.getElementById('ph-url').value = '';
+    document.getElementById('ph-cap').value = '';
+    rAdmPhotos();
+    toast('Photo added!');
+  } catch (err) {
+    toast('Error: Storage full! Remove some photos or use an external URL.');
+  }
 }
 
-function handleFiles(inp) {
+async function handleFiles(inp) {
   const files = inp instanceof Event ? inp.target.files : inp;
   if (!files || !files.length) return;
   const p = gP();
@@ -536,37 +573,44 @@ function handleFiles(inp) {
   let c = 0;
   let total = files.length;
   
-  Array.from(files).forEach(f => {
+  toast(`Processing ${total} photo(s)...`);
+
+  for (const f of Array.from(files)) {
     if (!f.type.startsWith('image/')) {
-        total--;
-        if (total === 0) return;
-        return;
+      total--; continue;
     }
-    const r = new FileReader();
-    r.onload = ev => {
-      p.push({
-        id: uid(),
-        url: ev.target.result,
-        caption: f.name.replace(/\.[^.]+$/, ''),
-        category: cat,
-        featured: false,
-        date: new Date().toISOString()
-      });
-      try {
-        DB.s('s_photos', p);
-        c++;
-      } catch (err) {
-        toast('Error saving: storage may be full.');
-        return;
-      }
-      if (c === total) {
-        rAdmPhotos();
-        toast(`${c} photo(s) uploaded!`);
-      }
-    };
-    r.readAsDataURL(f);
-  });
+    
+    // Read and then resize
+    await new Promise((resolve) => {
+      const r = new FileReader();
+      r.onload = async (ev) => {
+        try {
+          // Resize to max 1600px for gallery photos
+          const resizedUrl = await resImg(ev.target.result, 1600, 1600, 0.82);
+          p.push({
+            id: uid(),
+            url: resizedUrl,
+            caption: f.name.replace(/\.[^.]+$/, ''),
+            category: cat,
+            featured: false,
+            date: new Date().toISOString()
+          });
+          DB.s('s_photos', p);
+          c++;
+        } catch (err) {
+          console.error(err);
+          toast('Error saving: storage may be full.');
+        }
+        resolve();
+      };
+      r.readAsDataURL(f);
+    });
+  }
   
+  if (c > 0) {
+    rAdmPhotos();
+    toast(`${c} photo(s) optimized & uploaded!`);
+  }
   if (inp instanceof Event) inp.target.value = '';
 }
 
@@ -724,9 +768,14 @@ function savePost() {
   } else {
     posts.push(data);
   }
-  DB.s('s_posts', posts);
-  toast('Post saved!');
-  aSection('posts');
+  
+  try {
+    DB.s('s_posts', posts);
+    toast('Post saved!');
+    aSection('posts');
+  } catch (err) {
+    toast('Error: Storage full! Use a URL for the cover image instead.');
+  }
 }
 
 function delPost(id) {
@@ -755,6 +804,30 @@ function loadSettings() {
     ? `<img src="${s.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
     : `<span>📷</span>`;
   document.getElementById('av-file-name').textContent = '';
+  updateStorageUsage();
+}
+
+function updateStorageUsage() {
+  const bar = document.getElementById('storage-fill');
+  const txt = document.getElementById('storage-txt');
+  if (!bar || !txt) return;
+  
+  // Estimate usage (5MB limit is common)
+  const limit = 5 * 1024 * 1024; 
+  const used = JSON.stringify(localStorage).length;
+  const pct = Math.min(100, Math.round((used / limit) * 100));
+  
+  bar.style.width = pct + '%';
+  txt.textContent = pct + '%';
+  if (pct > 85) bar.style.background = '#e05a5a';
+  else bar.style.background = 'var(--gold)';
+}
+
+function clearAllData() {
+  if (!confirm('EXTREME DANGER: This will PERMANENTLY DELETE all your photos, blog posts, and settings. This cannot be undone. Proceed?')) return;
+  if (!confirm('Are you ABSOLUTELY sure? You will lose everything.')) return;
+  localStorage.clear();
+  location.reload();
 }
 
 let cropper = null;
@@ -851,22 +924,22 @@ function closeCrop() {
   }
 }
 
-function applyCrop() {
+async function applyCrop() {
   if (!cropper) return;
   const canvas = cropper.getCroppedCanvas({
-    maxWidth: 1600,
-    maxHeight: 1600,
+    maxWidth: 800,
+    maxHeight: 800,
     // Keep aspect ratio 1:1 for avatar
     imageSmoothingEnabled: true,
     imageSmoothingQuality: 'high'
   });
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
   document.getElementById('s-avatar').value = dataUrl;
   const av = document.getElementById('s-av-prev');
   av.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   document.getElementById('av-file-name').textContent = '✦ (Cropped image ready)';
   closeCrop();
-  toast('Photo cropped! Click "Save All Changes" below to finish.');
+  toast('Photo cropped & optimized!');
 }
 
 function saveSettings() {
