@@ -306,7 +306,10 @@ function aSection(id) {
   const sb = document.getElementById('asb-' + id);
   if (sb) sb.classList.add('on');
   if (id === 'dash') rDash();
-  if (id === 'photos') rAdmPhotos();
+  if (id === 'photos') {
+    rAdmPhotos();
+    initDropZone();
+  }
   if (id === 'posts') rAdmPosts();
   if (id === 'settings') loadSettings();
   if (id === 'messages') rMsgs();
@@ -525,11 +528,20 @@ function addPhotoURL() {
   toast('Photo added!');
 }
 
-function handleFiles(e) {
+function handleFiles(inp) {
+  const files = inp instanceof Event ? inp.target.files : inp;
+  if (!files || !files.length) return;
   const p = gP();
   const cat = document.getElementById('ph-cat').value;
   let c = 0;
-  Array.from(e.target.files).forEach(f => {
+  let total = files.length;
+  
+  Array.from(files).forEach(f => {
+    if (!f.type.startsWith('image/')) {
+        total--;
+        if (total === 0) return;
+        return;
+    }
     const r = new FileReader();
     r.onload = ev => {
       p.push({
@@ -540,14 +552,46 @@ function handleFiles(e) {
         featured: false,
         date: new Date().toISOString()
       });
-      DB.s('s_photos', p);
-      c++;
-      if (c === e.target.files.length) {
+      try {
+        DB.s('s_photos', p);
+        c++;
+      } catch (err) {
+        toast('Error saving: storage may be full.');
+        return;
+      }
+      if (c === total) {
         rAdmPhotos();
         toast(`${c} photo(s) uploaded!`);
       }
     };
     r.readAsDataURL(f);
+  });
+  
+  if (inp instanceof Event) inp.target.value = '';
+}
+
+function initDropZone() {
+  const dz = document.getElementById('drop-zone');
+  if (!dz || dz.dataset.init) return;
+  dz.dataset.init = 'true';
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+    dz.addEventListener(e, ev => {
+      ev.preventDefault();
+      ev.stopPropagation();
+    });
+  });
+
+  ['dragenter', 'dragover'].forEach(e => {
+    dz.addEventListener(e, () => dz.classList.add('drag'));
+  });
+
+  ['dragleave', 'drop'].forEach(e => {
+    dz.addEventListener(e, () => dz.classList.remove('drag'));
+  });
+
+  dz.addEventListener('drop', ev => {
+    handleFiles(ev.dataTransfer.files);
   });
 }
 
