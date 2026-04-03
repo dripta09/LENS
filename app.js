@@ -810,10 +810,13 @@ function closeCrop() {
 function applyCrop() {
   if (!cropper) return;
   const canvas = cropper.getCroppedCanvas({
-    width: 400,
-    height: 400
+    maxWidth: 1600,
+    maxHeight: 1600,
+    // Keep aspect ratio 1:1 for avatar
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high'
   });
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
   document.getElementById('s-avatar').value = dataUrl;
   const av = document.getElementById('s-av-prev');
   av.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
