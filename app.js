@@ -715,31 +715,86 @@ function loadSettings() {
 
 let cropper = null;
 
+function updateAvatarPrev() {
+  const url = document.getElementById('s-avatar').value.trim();
+  const av = document.getElementById('s-av-prev');
+  if (url) {
+    av.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='<span>📷</span>'">`;
+  } else {
+    av.innerHTML = `<span>📷</span>`;
+  }
+}
+
+function editAvatar() {
+  const url = document.getElementById('s-avatar').value.trim();
+  if (!url) {
+    toast('Choose a photo first!');
+    return;
+  }
+  openCrop(url);
+}
+
+function cropUrlAvatar() {
+  const url = document.getElementById('s-avatar').value.trim();
+  if (!url) {
+    toast('Enter an image URL first.');
+    return;
+  }
+  openCrop(url);
+}
+
+function openCrop(src) {
+  console.log('openCrop triggered with src:', src ? src.slice(0, 50) + '...' : 'empty');
+  const modal = document.getElementById('crop-modal');
+  const img = document.getElementById('crop-img');
+  
+  if (!modal || !img) {
+    console.error('Crop modal or image element NOT found!');
+    return;
+  }
+
+  // Set crossOrigin if it's an external URL to avoid tainted canvas issues
+  if (typeof src === 'string' && src.startsWith('http')) {
+    img.crossOrigin = 'anonymous';
+  } else {
+    img.removeAttribute('crossOrigin');
+  }
+  
+  // Assign handlers BEFORE setting src
+  img.onload = () => {
+    console.log('Image loaded, initializing cropper.');
+    if (cropper) cropper.destroy();
+    cropper = new Cropper(img, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.8,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+    });
+  };
+  
+  img.onerror = () => {
+    console.error('Error loading image into cropper.');
+    toast('Error loading image. Is the URL valid?');
+    closeCrop();
+  };
+
+  img.src = src;
+  modal.classList.add('on');
+}
+
 function handleAvatarFile(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function (ev) {
-    const modal = document.getElementById('crop-modal');
-    const img = document.getElementById('crop-img');
-    img.src = ev.target.result;
-    modal.classList.add('on');
-    if (cropper) cropper.destroy();
-    setTimeout(() => {
-      cropper = new Cropper(img, {
-        aspectRatio: 1,
-        viewMode: 1,
-        dragMode: 'move',
-        autoCropArea: 0.8,
-        restore: false,
-        guides: true,
-        center: true,
-        highlight: false,
-        cropBoxMovable: true,
-        cropBoxResizable: true,
-        toggleDragModeOnDblclick: false,
-      });
-    }, 100);
+    openCrop(ev.target.result);
   };
   reader.readAsDataURL(file);
 }
