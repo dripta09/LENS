@@ -433,7 +433,7 @@
             </div>
             <div class="s-form">
               <div class="av-row">
-                <div class="av-circle" id="s-av-prev"><span>📷</span></div>
+                <div class="av-circle" id="s-av-prev" onclick="editAvatar()" title="Click to crop or change profile picture" style="cursor:pointer;position:relative;overflow:hidden"><span>📷</span></div>
                 <div style="flex:1">
                   <div class="ef-g" style="margin-bottom:0">
                     <label class="lbl">Choose Photo from Device</label>
@@ -444,7 +444,10 @@
                     <div class="av-file-name" id="av-file-name"></div>
                     <div class="av-or">or paste a URL</div>
                     <label class="lbl">Profile Photo URL</label>
-                    <input class="ef-inp" id="s-avatar" placeholder="https://...">
+                    <div style="display:flex;gap:0.5rem">
+                      <input class="ef-inp" id="s-avatar" placeholder="https://..." onchange="updateAvatarPrev()">
+                      <button class="btn-a" onclick="cropUrlAvatar()" style="white-space:nowrap">Crop URL</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -554,7 +557,7 @@
 
   <!-- AVATAR CROP MODAL -->
   <div class="modal-overlay" id="crop-modal" onclick="if(event.target===this)closeCrop()">
-    <div class="modal-box" style="max-width:500px">
+    <div class="modal-box" style="max-width:600px">
       <div class="modal-top">
         <h3>Crop Profile Photo</h3>
         <button class="modal-close" onclick="closeCrop()">✕</button>
