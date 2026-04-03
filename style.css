@@ -251,7 +251,8 @@ footer{border-top:1px solid var(--border);padding:2.5rem;display:flex;align-item
 .ph-del{position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.75);border:none;color:#e05a5a;width:26px;height:26px;border-radius:50%;font-size:0.85rem;cursor:pointer;display:none;align-items:center;justify-content:center}
 .ph-th:hover .ph-del{display:flex}
 .drop-zone{border:1px dashed var(--border2);padding:2rem;text-align:center;position:relative;transition:all 0.2s;margin-bottom:1.25rem;max-width:540px}
-.drop-zone:hover,.drop-zone.drag{border-color:var(--gold);background:rgba(200,169,107,0.03)}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--gold);background:rgba(200,169,107,0.03);transform:translateY(-1px)}
+.drop-zone.drag p{color:var(--gold)}
 .drop-zone p{color:var(--muted);font-size:0.85rem;margin-bottom:0.3rem}
 .drop-zone span{color:var(--gold);font-family:var(--ff-cond);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase}
 .drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
