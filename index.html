@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LENS</title>
-  <link rel="icon" type="image/png" href="lens-logo.png?v=1.0">
-  <link rel="shortcut icon" type="image/png" href="lens-logo.png?v=1.0">
+  <link rel="icon" type="image/png" href="lens-logo.png?v=2.0">
+  <link rel="shortcut icon" type="image/png" href="lens-logo.png?v=2.0">
   <meta name="description"
     content="Lens — A premium photography portfolio showcasing portraits, landscapes, and visual stories through the lens.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,14 +49,17 @@
         </div>
       </div>
       <div class="hero-content">
-        <div class="hero-eyebrow" id="hero-eyebrow">Photography</div>
-        <h1 class="hero-h1" id="hero-h1">Capturing<br><em>Light &</em><br>Stillness</h1>
-        <p class="hero-sub" id="hero-sub">Visual stories told through the lens — portraits, landscapes, and the quiet
-          in-between moments.</p>
-        <div class="hero-ctas">
-          <button class="btn-gld" onclick="go('gallery')">View Gallery</button>
-          <button class="btn-ghost" onclick="go('blog')">Read Journal</button>
+        <div class="hero-text-col">
+          <div class="hero-eyebrow" id="hero-eyebrow">Photography</div>
+          <h1 class="hero-h1" id="hero-h1">Capturing<br><em>Light &</em><br>Stillness</h1>
+          <p class="hero-sub" id="hero-sub">Visual stories told through the lens — portraits, landscapes, and the quiet
+            in-between moments.</p>
+          <div class="hero-ctas">
+            <button class="btn-gld" onclick="go('gallery')">View Gallery</button>
+            <button class="btn-ghost" onclick="go('blog')">Read Journal</button>
+          </div>
         </div>
+        <div id="hero-3d-container"></div>
       </div>
       <div class="hero-scroll-hint">
         <div class="scroll-line"></div>Scroll
@@ -597,7 +600,8 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="hero-3d.js"></script>
   <script src="app.js"></script>
 </body>
 
