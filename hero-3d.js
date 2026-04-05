@@ -45,34 +45,32 @@ function init3D() {
     scene.add(cameraModel);
 
     // Materials
-    const bodyMat = new THREE.MeshPhysicalMaterial({
-        color: 0x121212,
-        roughness: 0.6,
-        metalness: 0.3,
-        reflectivity: 0.5
+    const bodyMat = new THREE.MeshStandardMaterial({
+        color: 0x333333,
+        roughness: 0.5,
+        metalness: 0.2
     });
-    const lensMat = new THREE.MeshPhysicalMaterial({
-        color: 0x0a0a0a,
+    const lensMat = new THREE.MeshStandardMaterial({
+        color: 0x222222,
         roughness: 0.2,
-        metalness: 0.7
+        metalness: 0.5
     });
     const glassMat = new THREE.MeshPhysicalMaterial({
         color: 0x1a1a1a,
         roughness: 0.05,
-        metalness: 1,
+        metalness: 0.8,
         transparent: true,
-        opacity: 0.6,
-        transmission: 0.9,
-        thickness: 0.5
+        opacity: 0.8,
+        clearcoat: 1.0
     });
     const goldMat = new THREE.MeshStandardMaterial({
         color: 0xc8a96b,
-        metalness: 0.9,
+        metalness: 0.8,
         roughness: 0.1
     });
     const redMat = new THREE.MeshStandardMaterial({
         color: 0xff3333,
-        metalness: 0.5,
+        metalness: 0.2,
         roughness: 0.2
     });
 
@@ -216,8 +214,17 @@ window.addEventListener('resize', () => {
 });
 
 // Init on load
+function attemptInit() {
+    container = document.getElementById('hero-3d-container');
+    if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+        init3D();
+    } else {
+        setTimeout(attemptInit, 100);
+    }
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init3D);
+    document.addEventListener('DOMContentLoaded', attemptInit);
 } else {
-    init3D();
+    attemptInit();
 }
