@@ -47,10 +47,21 @@ img{display:block;max-width:100%}
 .hero-bg{position:absolute;inset:0;background:#0a0a0a}
 .hero-bg img{width:100%;height:100%;object-fit:cover;opacity:0.55;transition:opacity 1.5s}
 .hero-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(8,8,8,0.92) 0%,rgba(8,8,8,0.2) 60%,transparent 100%)}
-.hero-content{position:relative;z-index:2;padding:0 2.5rem 5rem;max-width:900px}
+.hero-content{
+  position:relative;z-index:2;padding:0 2.5rem 5rem;
+  max-width:1400px;margin:0 auto;width:100%;
+  display:flex;align-items:center;justify-content:space-between;gap:4rem;
+}
+.hero-text-col{flex:1;max-width:700px}
+#hero-3d-container{
+  flex:1;height:500px;
+  position:relative;cursor:grab;
+  display:flex;align-items:center;justify-content:center;
+}
+#hero-3d-container:active{cursor:grabbing}
 .hero-eyebrow{font-family:var(--ff-cond);font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1.4rem;display:flex;align-items:center;gap:1rem}
 .hero-eyebrow::before{content:'';width:40px;height:1px;background:var(--gold)}
-.hero-h1{font-family:var(--ff-serif);font-size:clamp(3.5rem,8vw,7rem);font-weight:300;line-height:1.0;margin-bottom:1.8rem}
+.hero-h1{font-family:var(--ff-serif);font-size:clamp(3.5rem,8vw,7rem);font-weight:300;line-height:1.0;margin-bottom:1.8rem;white-space:nowrap}
 .hero-h1 em{font-style:italic;color:var(--gold)}
 .hero-sub{font-size:1rem;font-weight:300;color:var(--muted2);line-height:1.75;max-width:440px;margin-bottom:2.5rem}
 .hero-ctas{display:flex;gap:1rem;flex-wrap:wrap}
@@ -402,6 +413,12 @@ footer{border-top:1px solid var(--border);padding:2.5rem;display:flex;align-item
 
 /* ─── RESPONSIVE ─── */
 @media(max-width:900px){
+  .hero-content{flex-direction:column-reverse;gap:2rem;text-align:center;align-items:center;padding-bottom:3rem}
+  .hero-eyebrow{justify-content:center}
+  .hero-sub{margin:0 auto 2.5rem}
+  .hero-ctas{justify-content:center}
+  #hero-3d-container{height:300px;width:100%}
+  .hero-h1{white-space:normal}
   .masonry{columns:2}
   .about-text{padding:2.5rem 2rem}
   .mm-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
