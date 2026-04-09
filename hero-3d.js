@@ -4,6 +4,10 @@
    ════════════════════════════════════════════════════ */
 
 console.log('hero-3d.js loaded, THREE available:', typeof THREE !== 'undefined');
+console.log('=== 3D DEBUG ===');
+console.log('THREE loaded:', typeof THREE !== 'undefined');
+console.log('Container exists:', !!document.getElementById('hero-3d-container'));
+console.log('Container size:', document.getElementById('hero-3d-container')?.clientWidth, document.getElementById('hero-3d-container')?.clientHeight);
 let scene, camera, renderer, cameraModel;
 let container = document.getElementById('hero-3d-container');
 
