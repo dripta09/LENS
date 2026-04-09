@@ -4,7 +4,7 @@
    ════════════════════════════════════════════════════ */
 
 let scene, camera, renderer, cameraModel;
-let container = document.getElementById('hero-3d-container');
+let container;
 
 // Global Animation/Interaction Variables
 let isDragging = false;
@@ -18,6 +18,8 @@ let autoRotateSpeed = 0.001;
 function init3D() {
     container = document.getElementById('hero-3d-container');
     if (!container) return;
+
+    console.log("3D Scene Initializing...");
 
     // SCENE
     scene = new THREE.Scene();
@@ -61,7 +63,6 @@ function init3D() {
     const lensMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.6 });
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x0a0a0a, roughness: 0.02, metalness: 0.9, transparent: true, opacity: 0.85 });
     const goldMat = new THREE.MeshStandardMaterial({ color: 0xc8a96b, metalness: 0.9, roughness: 0.15 });
-    const blackPlasticMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.7 });
 
     // MAIN CAMERA BODY
     const bodyGeom = new THREE.BoxGeometry(4.0, 2.8, 2.0);
@@ -101,95 +102,4 @@ function init3D() {
     const shutterGeom = new THREE.CylinderGeometry(0.2, 0.2, 0.2, 16);
     const shutter = new THREE.Mesh(shutterGeom, goldMat);
     shutter.position.set(1.5, 1.5, 0.7);
-    cameraModel.add(shutter);
-
-    // Initial Transformations
-    cameraModel.rotation.y = targetRotationY;
-    cameraModel.rotation.x = targetRotationX;
-    cameraModel.position.y = -0.5;
-
-    animate();
-
-    // INTERACTION EVENTS
-    container.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        autoRotate = false;
-        previousMouseX = e.clientX;
-        previousMouseY = e.clientY;
-    });
-
-    window.addEventListener('mouseup', () => {
-        isDragging = false;
-        setTimeout(() => { autoRotate = true; }, 3000);
-    });
-
-    window.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            const deltaX = e.clientX - previousMouseX;
-            const deltaY = e.clientY - previousMouseY;
-            targetRotationY += deltaX * 0.008;
-            targetRotationX += deltaY * 0.008;
-            targetRotationX = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, targetRotationX));
-            previousMouseX = e.clientX;
-            previousMouseY = e.clientY;
-        }
-    });
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-
-    if (cameraModel && renderer && scene && camera) {
-        const time = Date.now() * 0.001;
-
-        // Subtle floating animation
-        cameraModel.position.y = -0.5 + Math.sin(time * 0.4) * 0.12;
-
-        // Smooth rotation interpolation
-        cameraModel.rotation.y += (targetRotationY - cameraModel.rotation.y) * 0.08;
-        cameraModel.rotation.x += (targetRotationX - cameraModel.rotation.x) * 0.08;
-
-        if (autoRotate) {
-            targetRotationY += autoRotateSpeed;
-        }
-
-        renderer.render(scene, camera);
-    }
-}
-
-// Handle Resize
-window.addEventListener('resize', () => {
-    if (!container || !camera || !renderer) return;
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-});
-
-// INITIALIZATION
-function attemptInit() {
-    container = document.getElementById('hero-3d-container');
-    if (!container) {
-        setTimeout(attemptInit, 100);
-        return;
-    }
-    if (container.clientWidth > 0 && container.clientHeight > 0) {
-        init3D();
-    } else {
-        setTimeout(attemptInit, 100);
-    }
-}
-
-function waitForThree() {
-    if (typeof THREE === 'undefined') {
-        setTimeout(waitForThree, 50);
-        return;
-    }
-    attemptInit();
-}
-
-// Run logic
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', waitForThree);
-} else {
-    waitForThree();
-}
+    camera
