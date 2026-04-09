@@ -3,6 +3,7 @@
    Professional DSLR with Detailed Features
    ════════════════════════════════════════════════════ */
 
+console.log('hero-3d.js loaded, THREE available:', typeof THREE !== 'undefined');
 let scene, camera, renderer, cameraModel;
 let container = document.getElementById('hero-3d-container');
 
