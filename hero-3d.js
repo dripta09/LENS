@@ -6,7 +6,7 @@
 let scene, camera, renderer, cameraModel;
 let container = document.getElementById('hero-3d-container');
 
-// --- MOVE THESE TO GLOBAL SCOPE ---
+// Global Animation/Interaction Variables
 let isDragging = false;
 let previousMouseX = 0;
 let previousMouseY = 0;
@@ -14,7 +14,6 @@ let targetRotationX = 0.15;
 let targetRotationY = -0.5;
 let autoRotate = true;
 let autoRotateSpeed = 0.001;
-// ---------------------------------
 
 function init3D() {
     container = document.getElementById('hero-3d-container');
@@ -38,7 +37,6 @@ function init3D() {
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
     // LIGHTS
@@ -47,12 +45,7 @@ function init3D() {
 
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
     keyLight.position.set(8, 8, 10);
-    keyLight.castShadow = true;
     scene.add(keyLight);
-
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    fillLight.position.set(-6, 3, 5);
-    scene.add(fillLight);
 
     const rimLight = new THREE.DirectionalLight(0xc8a96b, 1.2);
     rimLight.position.set(-8, 4, -6);
@@ -69,15 +62,13 @@ function init3D() {
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x0a0a0a, roughness: 0.02, metalness: 0.9, transparent: true, opacity: 0.85 });
     const goldMat = new THREE.MeshStandardMaterial({ color: 0xc8a96b, metalness: 0.9, roughness: 0.15 });
     const blackPlasticMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.7 });
-    const screenMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2a, roughness: 0.1, metalness: 0.8 });
 
-    // BODY
+    // MAIN CAMERA BODY
     const bodyGeom = new THREE.BoxGeometry(4.0, 2.8, 2.0);
     const body = new THREE.Mesh(bodyGeom, bodyMat);
-    body.castShadow = true;
     cameraModel.add(body);
 
-    // LENS
+    // LENS ASSEMBLY
     const lensGroup = new THREE.Group();
     lensGroup.position.set(-0.5, 0, 1.2);
     cameraModel.add(lensGroup);
@@ -94,6 +85,12 @@ function init3D() {
     glass.position.z = 2.05;
     lensGroup.add(glass);
 
+    // Gold accent ring
+    const ringGeom = new THREE.TorusGeometry(1.12, 0.04, 16, 100);
+    const goldRing = new THREE.Mesh(ringGeom, goldMat);
+    goldRing.position.z = 1.3;
+    lensGroup.add(goldRing);
+
     // GRIP
     const gripGeom = new THREE.BoxGeometry(0.8, 2.8, 1.6);
     const grip = new THREE.Mesh(gripGeom, gripMat);
@@ -106,15 +103,14 @@ function init3D() {
     shutter.position.set(1.5, 1.5, 0.7);
     cameraModel.add(shutter);
 
-    // INITIAL POSITION
+    // Initial Transformations
     cameraModel.rotation.y = targetRotationY;
     cameraModel.rotation.x = targetRotationX;
     cameraModel.position.y = -0.5;
 
-    // START ANIMATION
     animate();
 
-    // INTERACTION
+    // INTERACTION EVENTS
     container.addEventListener('mousedown', (e) => {
         isDragging = true;
         autoRotate = false;
@@ -146,10 +142,10 @@ function animate() {
     if (cameraModel && renderer && scene && camera) {
         const time = Date.now() * 0.001;
 
-        // Subtle floating
+        // Subtle floating animation
         cameraModel.position.y = -0.5 + Math.sin(time * 0.4) * 0.12;
 
-        // Smooth rotation
+        // Smooth rotation interpolation
         cameraModel.rotation.y += (targetRotationY - cameraModel.rotation.y) * 0.08;
         cameraModel.rotation.x += (targetRotationX - cameraModel.rotation.x) * 0.08;
 
@@ -161,7 +157,39 @@ function animate() {
     }
 }
 
-// RESIZE HANDLER
+// Handle Resize
 window.addEventListener('resize', () => {
     if (!container || !camera || !renderer) return;
-    camera.aspect = container.clientWidth / container.clientHeight
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+// INITIALIZATION
+function attemptInit() {
+    container = document.getElementById('hero-3d-container');
+    if (!container) {
+        setTimeout(attemptInit, 100);
+        return;
+    }
+    if (container.clientWidth > 0 && container.clientHeight > 0) {
+        init3D();
+    } else {
+        setTimeout(attemptInit, 100);
+    }
+}
+
+function waitForThree() {
+    if (typeof THREE === 'undefined') {
+        setTimeout(waitForThree, 50);
+        return;
+    }
+    attemptInit();
+}
+
+// Run logic
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', waitForThree);
+} else {
+    waitForThree();
+}
