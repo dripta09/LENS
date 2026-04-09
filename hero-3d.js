@@ -102,4 +102,95 @@ function init3D() {
     const shutterGeom = new THREE.CylinderGeometry(0.2, 0.2, 0.2, 16);
     const shutter = new THREE.Mesh(shutterGeom, goldMat);
     shutter.position.set(1.5, 1.5, 0.7);
-    camera
+    cameraModel.add(shutter);
+
+    // Initial Transformations
+    cameraModel.rotation.y = targetRotationY;
+    cameraModel.rotation.x = targetRotationX;
+    cameraModel.position.y = -0.5;
+
+    // INTERACTION EVENTS
+    container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        autoRotate = false;
+        previousMouseX = e.clientX;
+        previousMouseY = e.clientY;
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+        setTimeout(() => { autoRotate = true; }, 3000);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const deltaX = e.clientX - previousMouseX;
+            const deltaY = e.clientY - previousMouseY;
+            targetRotationY += deltaX * 0.008;
+            targetRotationX += deltaY * 0.008;
+            targetRotationX = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, targetRotationX));
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+        }
+    });
+
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    if (cameraModel && renderer && scene && camera) {
+        const time = Date.now() * 0.001;
+
+        // Subtle floating
+        cameraModel.position.y = -0.5 + Math.sin(time * 0.4) * 0.12;
+
+        // Smooth rotation
+        cameraModel.rotation.y += (targetRotationY - cameraModel.rotation.y) * 0.08;
+        cameraModel.rotation.x += (targetRotationX - cameraModel.rotation.x) * 0.08;
+
+        if (autoRotate) {
+            targetRotationY += autoRotateSpeed;
+        }
+
+        renderer.render(scene, camera);
+    }
+}
+
+// Handle Resize
+window.addEventListener('resize', () => {
+    if (!container || !camera || !renderer) return;
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+// INITIALIZATION LOGIC
+function attemptInit() {
+    container = document.getElementById('hero-3d-container');
+    if (!container) {
+        setTimeout(attemptInit, 100);
+        return;
+    }
+    if (container.clientWidth > 0 && container.clientHeight > 0) {
+        init3D();
+    } else {
+        setTimeout(attemptInit, 100);
+    }
+}
+
+function waitForThree() {
+    if (typeof THREE === 'undefined') {
+        setTimeout(waitForThree, 50);
+        return;
+    }
+    attemptInit();
+}
+
+// Start the check
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', waitForThree);
+} else {
+    waitForThree();
+}
