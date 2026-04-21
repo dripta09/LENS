@@ -1,67 +1,35 @@
 // ════════════════════════════════════════════════════
 //  LENS — Photography Portfolio
-//  Main Application Script (Supabase Backend)
+//  Main Application Script
 // ════════════════════════════════════════════════════
 
-// ── SUPABASE CONFIGURATION ───────────────────────────
-const SUPABASE_URL = 'https://opfsancaxyqrkkixjrse.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wZnNhbmNheHlxcmtraXhqcnNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4ODcwNzYsImV4cCI6MjA2MDQ2MzA3Nn0.dMqJGCp81cfY5s8Q0gZFsJoS8LEgLw0BeSFn2-zyb1Q';
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// ── DATA CACHE ───────────────────────────────────────
-let dataCache = {
-  settings: null,
-  photos: [],
-  posts: [],
-  messages: [],
-  categories: []
+// ── DATA LAYER ───────────────────────────────────────
+const DB = {
+  g: k => { try { return JSON.parse(localStorage.getItem(k)) } catch { return null } },
+  s: (k, v) => {
+    localStorage.setItem(k, JSON.stringify(v));
+    updateStorageUsage();
+  }
 };
 
-// ── DATA LAYER (Supabase) ────────────────────────────
-async function loadAllData() {
-  try {
-    const [settingsRes, photosRes, postsRes, messagesRes, categoriesRes] = await Promise.all([
-      supabase.from('settings').select('*').limit(1).single(),
-      supabase.from('photos').select('*').order('created_at', { ascending: false }),
-      supabase.from('posts').select('*').order('created_at', { ascending: false }),
-      supabase.from('messages').select('*').order('created_at', { ascending: false }),
-      supabase.from('categories').select('*').order('sort_order', { ascending: true })
-    ]);
+const DEFAULT_CATEGORIES = ['All', 'Portraits', 'Landscape', 'Travel', 'Street', 'Nature', 'Architecture', 'Events'];
 
-    dataCache.settings = settingsRes.data || getDefaultSettings();
-    dataCache.photos = photosRes.data || [];
-    dataCache.posts = postsRes.data || [];
-    dataCache.messages = messagesRes.data || [];
-    dataCache.categories = categoriesRes.data || [];
+const gS = () => DB.g('s_cfg') || {
+  name: 'Your Name',
+  tagline: 'Portrait · Landscape · Documentary',
+  bio: 'Update your bio in Admin → Settings.',
+  skills: 'Portraits,Landscape,Travel',
+  email: 'you@email.com',
+  avatar: '',
+  password: 'admin123',
+  heroH: 'Capturing<br><em>Light &</em><br>Stillness',
+  heroSub: 'Visual stories told through the lens — portraits, landscapes, and the quiet in-between moments.'
+};
 
-    return true;
-  } catch (err) {
-    console.error('Error loading data:', err);
-    return false;
-  }
-}
-
-function getDefaultSettings() {
-  return {
-    name: 'Your Name',
-    tagline: 'Portrait · Landscape · Documentary',
-    bio: 'Update your bio in Admin → Settings.',
-    skills: 'Portraits,Landscape,Travel',
-    email: 'you@email.com',
-    avatar: '',
-    password: 'admin123',
-    hero_heading: 'Capturing<br><em>Light &</em><br>Stillness',
-    hero_subheading: 'Visual stories told through the lens — portraits, landscapes, and the quiet in-between moments.'
-  };
-}
-
-// Getters (from cache)
-const gS = () => dataCache.settings || getDefaultSettings();
-const gP = () => dataCache.photos || [];
-const gB = () => dataCache.posts || [];
-const gM = () => dataCache.messages || [];
-const gC = () => dataCache.categories.map(c => c.name) || [];
+const gP = () => DB.g('s_photos') || [];
+const gB = () => DB.g('s_posts') || [];
+const gM = () => DB.g('s_msgs') || [];
+const gC = () => DB.g('s_photo_cats') || DEFAULT_CATEGORIES.slice(1); // exclude 'All'
 
 
 // ── ROUTING ──────────────────────────────────────────
@@ -96,8 +64,8 @@ window.addEventListener('scroll', () => {
 // ── HOME ─────────────────────────────────────────────
 function rHome() {
   const s = gS();
-  document.getElementById('hero-h1').innerHTML = s.hero_heading || 'Capturing<br><em>Light &</em><br>Stillness';
-  document.getElementById('hero-sub').textContent = s.hero_subheading || '';
+  document.getElementById('hero-h1').innerHTML = s.heroH || 'Capturing<br><em>Light &</em><br>Stillness';
+  document.getElementById('hero-sub').textContent = s.heroSub || '';
   document.getElementById('home-about-name').textContent = s.name || 'Your Name';
   document.getElementById('home-about-bio').textContent = s.bio || '';
   document.getElementById('ft-txt').textContent = '© ' + new Date().getFullYear() + ' ' + (s.name || 'LENS') + ' — All Rights Reserved';
@@ -114,10 +82,12 @@ function rHome() {
   const allPhotos = gP();
   const featured = allPhotos.filter(p => p.featured);
   const photos = featured.length >= 3 ? featured.slice(0, 3) : allPhotos.slice(0, 3);
+  // Set lbPhotos so lightbox works from featured section
   lbPhotos = allPhotos;
   const feat = document.getElementById('home-feat');
   if (!photos.length) {
     feat.innerHTML = `<div class="feat-main"><div class="feat-placeholder">📷</div></div><div class="feat-side"><div class="feat-placeholder">📷</div></div><div class="feat-side"><div class="feat-placeholder">📷</div></div>`;
+    // Blog preview (no photos case)
     const posts = gB().filter(p => p.status === 'published').slice(0, 2);
     document.getElementById('home-blog').innerHTML = posts.length
       ? posts.map(blogRow).join('')
@@ -141,6 +111,7 @@ function rHome() {
   });
   feat.innerHTML = html;
 
+  // Blog preview
   const posts = gB().filter(p => p.status === 'published').slice(0, 2);
   document.getElementById('home-blog').innerHTML = posts.length
     ? posts.map(blogRow).join('')
@@ -157,6 +128,7 @@ function rGallery() {
   const photos = gP();
   const cats = getUsedCategories(photos);
 
+  // Render filter tabs
   const filterWrap = document.getElementById('gallery-filters');
   const allCount = photos.length;
   let filterHtml = `<button class="gal-filter${galFilter === 'All' ? ' on' : ''}" onclick="setGalFilter('All')">All <span class="filter-count">${allCount}</span></button>`;
@@ -166,6 +138,7 @@ function rGallery() {
   });
   filterWrap.innerHTML = filterHtml;
 
+  // Filter photos
   const filtered = galFilter === 'All' ? photos : photos.filter(p => p.category === galFilter);
   lbPhotos = filtered;
 
@@ -219,8 +192,8 @@ document.addEventListener('keydown', e => {
 
 // ── BLOG ─────────────────────────────────────────────
 function blogRow(post) {
-  const imgHtml = post.cover_image
-    ? `<img src="${post.cover_image}" alt="${post.title}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=\\'blog-thumb-ph\\'>✍️</div>'">`
+  const imgHtml = post.coverImage
+    ? `<img src="${post.coverImage}" alt="${post.title}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=\\'blog-thumb-ph\\'>✍️</div>'">`
     : `<div class="blog-thumb-ph">✍️</div>`;
   return `<div class="blog-item" onclick="openPost('${post.id}')">
     <div class="blog-thumb">${imgHtml}</div>
@@ -228,7 +201,7 @@ function blogRow(post) {
       <div class="blog-cat">${post.category || 'Journal'}</div>
       <h3 class="blog-title">${post.title}</h3>
       <p class="blog-excerpt">${post.excerpt || strip(post.content).slice(0, 180)}</p>
-      <div class="blog-meta-row"><span>${fmtDate(post.created_at)}</span><span>${post.category || 'Journal'}</span></div>
+      <div class="blog-meta-row"><span>${fmtDate(post.date)}</span><span>${post.category || 'Journal'}</span></div>
     </div>
   </div>`;
 }
@@ -246,10 +219,10 @@ function openPost(id) {
   if (!post) return;
   document.getElementById('post-eyebrow').textContent = post.category || 'Journal';
   document.getElementById('post-h1').textContent = post.title;
-  document.getElementById('post-byline').innerHTML = `<span>${fmtDate(post.created_at)}</span><span>${post.category}</span>`;
+  document.getElementById('post-byline').innerHTML = `<span>${fmtDate(post.date)}</span><span>${post.category}</span>`;
   const bg = document.getElementById('post-hero-bg');
-  bg.innerHTML = post.cover_image
-    ? `<img src="${post.cover_image}" alt="${post.title}"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(8,8,8,0.97) 0%,rgba(8,8,8,0.3) 70%,transparent)"></div>`
+  bg.innerHTML = post.coverImage
+    ? `<img src="${post.coverImage}" alt="${post.title}"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(8,8,8,0.97) 0%,rgba(8,8,8,0.3) 70%,transparent)"></div>`
     : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#12100e,#080808)"></div>`;
   document.getElementById('post-body').innerHTML = post.content;
   document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
@@ -274,40 +247,30 @@ function rAbout() {
 
 
 // ── CONTACT ──────────────────────────────────────────
-async function sendMsg() {
+function sendMsg() {
   const name = document.getElementById('cf-name').value.trim();
   const email = document.getElementById('cf-email').value.trim();
-  const message = document.getElementById('cf-msg').value.trim();
-  if (!name || !email || !message) { alert('Please fill all fields.'); return; }
-
-  try {
-    const { error } = await supabase.from('messages').insert({ name, email, message });
-    if (error) throw error;
-
-    document.getElementById('cf-name').value = '';
-    document.getElementById('cf-email').value = '';
-    document.getElementById('cf-msg').value = '';
-    const ok = document.getElementById('cf-ok');
-    ok.style.display = 'block';
-    setTimeout(() => ok.style.display = 'none', 5000);
-
-    // Refresh messages cache
-    const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
-    dataCache.messages = data || [];
-  } catch (err) {
-    console.error('Error sending message:', err);
-    toast('Error sending message. Please try again.');
-  }
+  const msg = document.getElementById('cf-msg').value.trim();
+  if (!name || !email || !msg) { alert('Please fill all fields.'); return; }
+  const msgs = gM();
+  msgs.push({ id: uid(), name, email, message: msg, date: new Date().toISOString() });
+  DB.s('s_msgs', msgs);
+  document.getElementById('cf-name').value = '';
+  document.getElementById('cf-email').value = '';
+  document.getElementById('cf-msg').value = '';
+  const ok = document.getElementById('cf-ok');
+  ok.style.display = 'block';
+  setTimeout(() => ok.style.display = 'none', 5000);
 }
 
 
 // ── ADMIN ────────────────────────────────────────────
 let loggedIn = false;
-let mmView = 'grid';
+let mmView = 'grid'; // 'grid' or 'table'
 let mmFilterCat = 'All';
 let mmSearch = '';
 
-async function doLogin() {
+function doLogin() {
   const pw = document.getElementById('adm-pw').value;
   const s = gS();
   if (pw === (s.password || 'admin123')) {
@@ -369,9 +332,9 @@ function rDash() {
   document.getElementById('st-po').textContent = gB().length;
   document.getElementById('st-ms').textContent = gM().length;
   document.getElementById('st-cat').textContent = cats.length;
-  const recent = gB().slice(0, 3);
+  const recent = gB().slice(-3).reverse();
   document.getElementById('dash-recent').innerHTML = recent.length
-    ? `<table class="adm-tbl"><thead><tr><th>Title</th><th>Status</th><th>Date</th></tr></thead><tbody>${recent.map(p => `<tr><td>${p.title}</td><td class="${p.status === 'published' ? 'pub' : 'dft'}">${p.status}</td><td>${fmtDate(p.created_at)}</td></tr>`).join('')}</tbody></table>`
+    ? `<table class="adm-tbl"><thead><tr><th>Title</th><th>Status</th><th>Date</th></tr></thead><tbody>${recent.map(p => `<tr><td>${p.title}</td><td class="${p.status === 'published' ? 'pub' : 'dft'}">${p.status}</td><td>${fmtDate(p.date)}</td></tr>`).join('')}</tbody></table>`
     : `<p style="color:var(--muted);font-size:0.85rem">No posts yet.</p>`;
 }
 
@@ -382,8 +345,10 @@ function rAdmPhotos() {
   const cats = gC();
   const usedCats = getUsedCategories(photos);
 
+  // Category manager
   renderCatManager(cats, photos);
 
+  // Populate upload category dropdown
   const phCatSel = document.getElementById('ph-cat');
   if (phCatSel) {
     let phOpts = '<option value="">— None —</option>';
@@ -391,22 +356,27 @@ function rAdmPhotos() {
     phCatSel.innerHTML = phOpts;
   }
 
+  // Toolbar: category filter dropdown
   const filterSel = document.getElementById('mm-filter-cat');
   let filterOpts = '<option value="All">All Categories</option>';
   cats.forEach(c => {
     filterOpts += `<option value="${esc(c)}" ${mmFilterCat === c ? 'selected' : ''}>${c}</option>`;
   });
+  // Also add any used categories not in the managed list
   usedCats.forEach(c => {
     if (!cats.includes(c)) filterOpts += `<option value="${esc(c)}" ${mmFilterCat === c ? 'selected' : ''}>${c} ⚠</option>`;
   });
   filterSel.innerHTML = filterOpts;
 
+  // Search
   document.getElementById('mm-search').value = mmSearch;
 
+  // View toggle
   document.querySelectorAll('.mm-view-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.view === mmView);
   });
 
+  // Filter & search photos
   let filtered = photos;
   if (mmFilterCat !== 'All') filtered = filtered.filter(p => p.category === mmFilterCat);
   if (mmSearch) {
@@ -414,6 +384,7 @@ function rAdmPhotos() {
     filtered = filtered.filter(p => (p.caption || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
   }
 
+  // Stats
   const featured = photos.filter(p => p.featured).length;
   const uncategorized = photos.filter(p => !p.category).length;
   document.getElementById('mm-stats').innerHTML = `
@@ -423,6 +394,7 @@ function rAdmPhotos() {
     ${uncategorized ? `<span class="mm-stat"><strong>${uncategorized}</strong> Uncategorized</span>` : ''}
   `;
 
+  // Render grid or table
   const container = document.getElementById('mm-content');
   const emptyEl = document.getElementById('photos-empty');
 
@@ -448,10 +420,10 @@ function rAdmPhotos() {
           <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ph.caption || '<span style="color:var(--muted);font-style:italic">No caption</span>'}</td>
           <td>${ph.category ? `<span class="mm-cat-label">${ph.category}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
           <td>${ph.featured ? '<span class="mm-featured-badge">★ Yes</span>' : '<span style="color:var(--muted)">—</span>'}</td>
-          <td style="color:var(--muted);white-space:nowrap">${fmtDate(ph.created_at)}</td>
+          <td style="color:var(--muted);white-space:nowrap">${fmtDate(ph.date)}</td>
           <td style="white-space:nowrap">
-            <button class="btn-ed" onclick="openPhotoEdit('${ph.id}')">Edit</button>
-            <button class="btn-del" onclick="delPhoto('${ph.id}')">Del</button>
+            <button class="btn-ed" onclick="openPhotoEdit(${realIdx})">Edit</button>
+            <button class="btn-del" onclick="delPhoto(${realIdx})">Del</button>
           </td>
         </tr>`;
       }).join('')}</tbody>
@@ -470,10 +442,10 @@ function mmCardHtml(ph, idx) {
       <div class="mm-card-caption${captionClass}">${captionText}</div>
       ${ph.category ? `<div class="mm-card-cat"><span class="mm-cat-label">${ph.category}</span></div>` : ''}
       <div class="mm-card-meta">
-        <span class="mm-card-date">${ph.featured ? '★ ' : ''}${fmtDate(ph.created_at)}</span>
+        <span class="mm-card-date">${ph.featured ? '★ ' : ''}${fmtDate(ph.date)}</span>
         <div class="mm-card-actions">
-          <button onclick="openPhotoEdit('${ph.id}')" title="Edit">✎</button>
-          <button class="mm-act-del" onclick="delPhoto('${ph.id}')" title="Delete">✕</button>
+          <button onclick="openPhotoEdit(${idx})" title="Edit">✎</button>
+          <button class="mm-act-del" onclick="delPhoto(${idx})" title="Delete">✕</button>
         </div>
       </div>
     </div>
@@ -508,7 +480,7 @@ function renderCatManager(cats, photos) {
   }).join('');
 }
 
-async function addCat() {
+function addCat() {
   const inp = document.getElementById('cat-new-name');
   const name = inp.value.trim();
   if (!name) return;
@@ -517,132 +489,127 @@ async function addCat() {
     toast('Category already exists.');
     return;
   }
-
-  try {
-    const { error } = await supabase.from('categories').insert({ name, sort_order: cats.length });
-    if (error) throw error;
-
-    // Refresh categories
-    const { data } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
-    dataCache.categories = data || [];
-    inp.value = '';
-    rAdmPhotos();
-    toast('Category added!');
-  } catch (err) {
-    console.error('Error adding category:', err);
-    toast('Error adding category.');
-  }
+  cats.push(name);
+  DB.s('s_photo_cats', cats);
+  inp.value = '';
+  rAdmPhotos();
+  toast('Category added!');
 }
 
-async function removeCat(name) {
+function removeCat(name) {
   const photos = gP();
   const count = photos.filter(p => p.category === name).length;
   const msg = count > 0
     ? `Remove "${name}"? ${count} photo(s) will become uncategorized.`
     : `Remove category "${name}"?`;
   if (!confirm(msg)) return;
-
-  try {
-    // Remove category from photos first
-    if (count > 0) {
-      await supabase.from('photos').update({ category: '' }).eq('category', name);
-    }
-
-    // Remove category
-    const { error } = await supabase.from('categories').delete().eq('name', name);
-    if (error) throw error;
-
-    // Refresh data
-    const [photosRes, catsRes] = await Promise.all([
-      supabase.from('photos').select('*').order('created_at', { ascending: false }),
-      supabase.from('categories').select('*').order('sort_order', { ascending: true })
-    ]);
-    dataCache.photos = photosRes.data || [];
-    dataCache.categories = catsRes.data || [];
-
-    rAdmPhotos();
-    toast('Category removed.');
-  } catch (err) {
-    console.error('Error removing category:', err);
-    toast('Error removing category.');
+  // Remove from categories list
+  const cats = gC().filter(c => c !== name);
+  DB.s('s_photo_cats', cats);
+  // Remove category from photos
+  if (count > 0) {
+    const updated = photos.map(p => p.category === name ? { ...p, category: '' } : p);
+    DB.s('s_photos', updated);
   }
+  rAdmPhotos();
+  toast('Category removed.');
 }
 
 
 // ── PHOTO ADD / UPLOAD ───────────────────────────────
+// ── PHOTO ADD / UPLOAD ───────────────────────────────
+async function resImg(dataUrl, maxW, maxH, q = 0.8) {
+  if (dataUrl.startsWith('data:image/svg+xml')) return dataUrl; // Don't resize SVGs
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+      if (w > maxW || h > maxH) {
+        const r = Math.min(maxW / w, maxH / h);
+        w *= r; h *= r;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', q));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
 async function addPhotoURL() {
   let url = document.getElementById('ph-url').value.trim();
   if (!url) { alert('Enter a URL.'); return; }
+  
+  if (url.startsWith('http')) {
+    // If external URL, we ideally want to resize it too if we "import" it
+    // But for now purely URL-based references stay as is.
+  }
 
   const cap = document.getElementById('ph-cap').value.trim();
   const cat = document.getElementById('ph-cat').value;
-
+  const p = gP();
+  p.push({ id: uid(), url, caption: cap, category: cat, featured: false, date: new Date().toISOString() });
+  
   try {
-    const { error } = await supabase.from('photos').insert({
-      url,
-      caption: cap,
-      category: cat,
-      featured: false
-    });
-    if (error) throw error;
-
-    // Refresh photos
-    const { data } = await supabase.from('photos').select('*').order('created_at', { ascending: false });
-    dataCache.photos = data || [];
-
+    DB.s('s_photos', p);
     document.getElementById('ph-url').value = '';
     document.getElementById('ph-cap').value = '';
     rAdmPhotos();
     toast('Photo added!');
   } catch (err) {
-    console.error('Error adding photo:', err);
-    toast('Error adding photo.');
+    toast('Error: Storage full! Remove some photos or use an external URL.');
   }
 }
 
 async function handleFiles(inp) {
   const files = inp instanceof Event ? inp.target.files : inp;
   if (!files || !files.length) return;
+  const p = gP();
   const cat = document.getElementById('ph-cat').value;
   let c = 0;
   let total = files.length;
-
+  
   toast(`Processing ${total} photo(s)...`);
 
   for (const f of Array.from(files)) {
     if (!f.type.startsWith('image/')) {
       total--; continue;
     }
-
-    // For uploaded files, we need to convert to data URL
-    // Note: For production, you'd want to upload to Supabase Storage
+    
+    // Read and then resize
     await new Promise((resolve) => {
       const r = new FileReader();
       r.onload = async (ev) => {
         try {
-          const { error } = await supabase.from('photos').insert({
-            url: ev.target.result,
+          // Resize to max 1600px for gallery photos
+          const resizedUrl = await resImg(ev.target.result, 1600, 1600, 0.82);
+          p.push({
+            id: uid(),
+            url: resizedUrl,
             caption: f.name.replace(/\.[^.]+$/, ''),
             category: cat,
-            featured: false
+            featured: false,
+            date: new Date().toISOString()
           });
-          if (!error) c++;
+          DB.s('s_photos', p);
+          c++;
         } catch (err) {
           console.error(err);
+          toast('Error saving: storage may be full.');
         }
         resolve();
       };
       r.readAsDataURL(f);
     });
   }
-
-  // Refresh photos
-  const { data } = await supabase.from('photos').select('*').order('created_at', { ascending: false });
-  dataCache.photos = data || [];
-
+  
   if (c > 0) {
     rAdmPhotos();
-    toast(`${c} photo(s) uploaded!`);
+    toast(`${c} photo(s) optimized & uploaded!`);
   }
   if (inp instanceof Event) inp.target.value = '';
 }
@@ -672,51 +639,43 @@ function initDropZone() {
   });
 }
 
-async function delPhoto(id) {
+function delPhoto(i) {
   if (!confirm('Remove photo?')) return;
-
-  try {
-    const { error } = await supabase.from('photos').delete().eq('id', id);
-    if (error) throw error;
-
-    // Refresh photos
-    const { data } = await supabase.from('photos').select('*').order('created_at', { ascending: false });
-    dataCache.photos = data || [];
-
-    rAdmPhotos();
-    toast('Removed.');
-  } catch (err) {
-    console.error('Error deleting photo:', err);
-    toast('Error deleting photo.');
-  }
+  const p = gP();
+  p.splice(i, 1);
+  DB.s('s_photos', p);
+  rAdmPhotos();
+  toast('Removed.');
 }
 
 
 // ── PHOTO EDIT MODAL ─────────────────────────────────
-let editingPhotoId = null;
+let editingPhotoIdx = -1;
 
-function openPhotoEdit(id) {
-  editingPhotoId = id;
+function openPhotoEdit(idx) {
+  editingPhotoIdx = idx;
   const photos = gP();
-  const ph = photos.find(p => p.id === id);
+  const ph = photos[idx];
   if (!ph) return;
 
   document.getElementById('pe-preview').innerHTML = `<img src="${ph.url}" alt="">`;
   document.getElementById('pe-caption').value = ph.caption || '';
   document.getElementById('pe-featured').checked = !!ph.featured;
 
+  // Populate category dropdown
   const cats = gC();
   const sel = document.getElementById('pe-category');
   let opts = '<option value="">— None —</option>';
   cats.forEach(c => {
     opts += `<option value="${esc(c)}" ${ph.category === c ? 'selected' : ''}>${c}</option>`;
   });
+  // If current category isn't in the list, still show it
   if (ph.category && !cats.includes(ph.category)) {
     opts += `<option value="${esc(ph.category)}" selected>${ph.category}</option>`;
   }
   sel.innerHTML = opts;
 
-  document.getElementById('pe-date').textContent = fmtDate(ph.created_at);
+  document.getElementById('pe-date').textContent = fmtDate(ph.date);
   document.getElementById('pe-size').textContent = ph.url.startsWith('data:')
     ? formatBytes(ph.url.length * 0.75)
     : 'External URL';
@@ -726,39 +685,23 @@ function openPhotoEdit(id) {
 
 function closePhotoEdit() {
   document.getElementById('photo-edit-modal').classList.remove('on');
-  editingPhotoId = null;
+  editingPhotoIdx = -1;
 }
 
-async function savePhotoEdit() {
-  if (!editingPhotoId) return;
-
-  const caption = document.getElementById('pe-caption').value.trim();
-  const category = document.getElementById('pe-category').value;
-  const featured = document.getElementById('pe-featured').checked;
-
-  try {
-    const { error } = await supabase.from('photos').update({
-      caption,
-      category,
-      featured,
-      updated_at: new Date().toISOString()
-    }).eq('id', editingPhotoId);
-
-    if (error) throw error;
-
-    // Refresh photos
-    const { data } = await supabase.from('photos').select('*').order('created_at', { ascending: false });
-    dataCache.photos = data || [];
-
-    closePhotoEdit();
-    rAdmPhotos();
-    toast('Photo updated!');
-  } catch (err) {
-    console.error('Error updating photo:', err);
-    toast('Error updating photo.');
-  }
+function savePhotoEdit() {
+  if (editingPhotoIdx < 0) return;
+  const photos = gP();
+  const ph = photos[editingPhotoIdx];
+  ph.caption = document.getElementById('pe-caption').value.trim();
+  ph.category = document.getElementById('pe-category').value;
+  ph.featured = document.getElementById('pe-featured').checked;
+  DB.s('s_photos', photos);
+  closePhotoEdit();
+  rAdmPhotos();
+  toast('Photo updated!');
 }
 
+// Close modal on Escape
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('photo-edit-modal').classList.contains('on')) {
     closePhotoEdit();
@@ -773,11 +716,11 @@ function rAdmPosts() {
   const em = document.getElementById('posts-empty');
   if (!posts.length) { tb.innerHTML = ''; em.style.display = 'block'; return; }
   em.style.display = 'none';
-  tb.innerHTML = posts.map(p => `<tr>
-    <td>${p.cover_image ? `<img class="tbl-thumb" src="${p.cover_image}" onerror="this.style.display='none'">` : '<div class="tbl-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--muted)">✍️</div>'}</td>
+  tb.innerHTML = posts.slice().reverse().map(p => `<tr>
+    <td>${p.coverImage ? `<img class="tbl-thumb" src="${p.coverImage}" onerror="this.style.display='none'">` : '<div class="tbl-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--muted)">✍️</div>'}</td>
     <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</td>
     <td style="color:var(--muted)">${p.category}</td>
-    <td style="color:var(--muted)">${fmtDate(p.created_at)}</td>
+    <td style="color:var(--muted)">${fmtDate(p.date)}</td>
     <td class="${p.status === 'published' ? 'pub' : 'dft'}">${p.status}</td>
     <td style="white-space:nowrap"><button class="btn-ed" onclick="editPost('${p.id}')">Edit</button><button class="btn-del" onclick="delPost('${p.id}')">Del</button></td>
   </tr>`).join('');
@@ -797,67 +740,50 @@ function editPost(id) {
   document.getElementById('ed-ttl').value = p.title;
   document.getElementById('ed-cat').value = p.category;
   document.getElementById('ed-status').value = p.status;
-  document.getElementById('ed-img').value = p.cover_image || '';
+  document.getElementById('ed-img').value = p.coverImage || '';
   document.getElementById('ed-exc').value = p.excerpt || '';
   document.getElementById('ed-body').value = p.content;
   aSection('new-post');
   document.getElementById('as-new-post').classList.add('on');
 }
 
-async function savePost() {
+function savePost() {
   const title = document.getElementById('ed-ttl').value.trim();
   if (!title) { alert('Enter a title.'); return; }
   const eid = document.getElementById('ed-id').value;
-
+  const posts = gB();
   const data = {
+    id: eid || uid(),
     title,
     category: document.getElementById('ed-cat').value,
     status: document.getElementById('ed-status').value,
-    cover_image: document.getElementById('ed-img').value.trim(),
+    coverImage: document.getElementById('ed-img').value.trim(),
     excerpt: document.getElementById('ed-exc').value.trim(),
     content: document.getElementById('ed-body').value,
-    updated_at: new Date().toISOString()
+    date: eid ? posts.find(p => p.id === eid)?.date : new Date().toISOString()
   };
-
+  if (eid) {
+    const i = posts.findIndex(p => p.id === eid);
+    posts[i] = data;
+  } else {
+    posts.push(data);
+  }
+  
   try {
-    if (eid) {
-      const { error } = await supabase.from('posts').update(data).eq('id', eid);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase.from('posts').insert(data);
-      if (error) throw error;
-    }
-
-    // Refresh posts
-    const { data: postsData } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-    dataCache.posts = postsData || [];
-
+    DB.s('s_posts', posts);
     toast('Post saved!');
     aSection('posts');
   } catch (err) {
-    console.error('Error saving post:', err);
-    toast('Error saving post.');
+    toast('Error: Storage full! Use a URL for the cover image instead.');
   }
 }
 
-async function delPost(id) {
+function delPost(id) {
   if (!confirm('Delete this post?')) return;
-
-  try {
-    const { error } = await supabase.from('posts').delete().eq('id', id);
-    if (error) throw error;
-
-    // Refresh posts
-    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-    dataCache.posts = data || [];
-
-    rAdmPosts();
-    rDash();
-    toast('Deleted.');
-  } catch (err) {
-    console.error('Error deleting post:', err);
-    toast('Error deleting post.');
-  }
+  DB.s('s_posts', gB().filter(p => p.id !== id));
+  rAdmPosts();
+  rDash();
+  toast('Deleted.');
 }
 
 
@@ -870,14 +796,38 @@ function loadSettings() {
   document.getElementById('s-skills').value = s.skills || '';
   document.getElementById('s-email').value = s.email || '';
   document.getElementById('s-avatar').value = s.avatar || '';
-  document.getElementById('s-hero').value = s.hero_heading || '';
-  document.getElementById('s-hsub').value = s.hero_subheading || '';
+  document.getElementById('s-hero').value = s.heroH || '';
+  document.getElementById('s-hsub').value = s.heroSub || '';
   document.getElementById('s-pw').value = '';
   const av = document.getElementById('s-av-prev');
   av.innerHTML = s.avatar
     ? `<img src="${s.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
     : `<span>📷</span>`;
   document.getElementById('av-file-name').textContent = '';
+  updateStorageUsage();
+}
+
+function updateStorageUsage() {
+  const bar = document.getElementById('storage-fill');
+  const txt = document.getElementById('storage-txt');
+  if (!bar || !txt) return;
+  
+  // Estimate usage (5MB limit is common)
+  const limit = 5 * 1024 * 1024; 
+  const used = JSON.stringify(localStorage).length;
+  const pct = Math.min(100, Math.round((used / limit) * 100));
+  
+  bar.style.width = pct + '%';
+  txt.textContent = pct + '%';
+  if (pct > 85) bar.style.background = '#e05a5a';
+  else bar.style.background = 'var(--gold)';
+}
+
+function clearAllData() {
+  if (!confirm('EXTREME DANGER: This will PERMANENTLY DELETE all your photos, blog posts, and settings. This cannot be undone. Proceed?')) return;
+  if (!confirm('Are you ABSOLUTELY sure? You will lose everything.')) return;
+  localStorage.clear();
+  location.reload();
 }
 
 let cropper = null;
@@ -911,18 +861,25 @@ function cropUrlAvatar() {
 }
 
 function openCrop(src) {
+  console.log('openCrop triggered with src:', src ? src.slice(0, 50) + '...' : 'empty');
   const modal = document.getElementById('crop-modal');
   const img = document.getElementById('crop-img');
+  
+  if (!modal || !img) {
+    console.error('Crop modal or image element NOT found!');
+    return;
+  }
 
-  if (!modal || !img) return;
-
+  // Set crossOrigin if it's an external URL to avoid tainted canvas issues
   if (typeof src === 'string' && src.startsWith('http')) {
     img.crossOrigin = 'anonymous';
   } else {
     img.removeAttribute('crossOrigin');
   }
-
+  
+  // Assign handlers BEFORE setting src
   img.onload = () => {
+    console.log('Image loaded, initializing cropper.');
     if (cropper) cropper.destroy();
     cropper = new Cropper(img, {
       aspectRatio: 1,
@@ -938,8 +895,9 @@ function openCrop(src) {
       toggleDragModeOnDblclick: false,
     });
   };
-
+  
   img.onerror = () => {
+    console.error('Error loading image into cropper.');
     toast('Error loading image. Is the URL valid?');
     closeCrop();
   };
@@ -971,6 +929,7 @@ async function applyCrop() {
   const canvas = cropper.getCroppedCanvas({
     maxWidth: 800,
     maxHeight: 800,
+    // Keep aspect ratio 1:1 for avatar
     imageSmoothingEnabled: true,
     imageSmoothingQuality: 'high'
   });
@@ -980,39 +939,27 @@ async function applyCrop() {
   av.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   document.getElementById('av-file-name').textContent = '✦ (Cropped image ready)';
   closeCrop();
-  toast('Photo cropped!');
+  toast('Photo cropped & optimized!');
 }
 
-async function saveSettings() {
+function saveSettings() {
   const s = gS();
   const np = document.getElementById('s-pw').value;
-
-  const updatedSettings = {
+  const avatarVal = document.getElementById('s-avatar').value.trim();
+  const u = {
+    ...s,
     name: document.getElementById('s-name').value.trim(),
     tagline: document.getElementById('s-tag').value.trim(),
     bio: document.getElementById('s-bio').value.trim(),
     skills: document.getElementById('s-skills').value.trim(),
     email: document.getElementById('s-email').value.trim(),
-    avatar: document.getElementById('s-avatar').value.trim(),
-    hero_heading: document.getElementById('s-hero').value.trim(),
-    hero_subheading: document.getElementById('s-hsub').value.trim(),
-    password: np || s.password,
-    updated_at: new Date().toISOString()
+    avatar: avatarVal,
+    heroH: document.getElementById('s-hero').value.trim(),
+    heroSub: document.getElementById('s-hsub').value.trim(),
+    password: np || s.password
   };
-
-  try {
-    const { error } = await supabase.from('settings').update(updatedSettings).eq('id', s.id);
-    if (error) throw error;
-
-    // Refresh settings
-    const { data } = await supabase.from('settings').select('*').limit(1).single();
-    dataCache.settings = data || getDefaultSettings();
-
-    toast('Settings saved!');
-  } catch (err) {
-    console.error('Error saving settings:', err);
-    toast('Error saving settings.');
-  }
+  DB.s('s_cfg', u);
+  toast('Settings saved!');
 }
 
 
@@ -1023,29 +970,17 @@ function rMsgs() {
   const em = document.getElementById('msgs-empty');
   if (!msgs.length) { tb.innerHTML = ''; em.style.display = 'block'; return; }
   em.style.display = 'none';
-  tb.innerHTML = msgs.map(m => `<tr class="msg-row">
+  tb.innerHTML = msgs.slice().reverse().map(m => `<tr class="msg-row">
     <td>${m.name}</td><td style="color:var(--gold)">${m.email}</td>
-    <td class="msg-txt">${m.message}</td><td style="white-space:nowrap">${fmtDate(m.created_at)}</td>
+    <td class="msg-txt">${m.message}</td><td style="white-space:nowrap">${fmtDate(m.date)}</td>
     <td><button class="btn-del" onclick="delMsg('${m.id}')">Del</button></td>
   </tr>`).join('');
 }
 
-async function delMsg(id) {
+function delMsg(id) {
   if (!confirm('Delete?')) return;
-
-  try {
-    const { error } = await supabase.from('messages').delete().eq('id', id);
-    if (error) throw error;
-
-    // Refresh messages
-    const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
-    dataCache.messages = data || [];
-
-    rMsgs();
-  } catch (err) {
-    console.error('Error deleting message:', err);
-    toast('Error deleting message.');
-  }
+  DB.s('s_msgs', gM().filter(m => m.id !== id));
+  rMsgs();
 }
 
 
@@ -1081,16 +1016,4 @@ function toast(msg) {
 
 
 // ── INIT ─────────────────────────────────────────────
-async function init() {
-  // Show loading state
-  document.getElementById('hero-h1').innerHTML = 'Loading...';
-  
-  // Load all data from Supabase
-  await loadAllData();
-  
-  // Render home page
-  rHome();
-}
-
-// Start the app
-init();
+rHome();
