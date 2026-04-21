@@ -475,15 +475,24 @@
                   id="s-pw" placeholder="Leave blank to keep current"></div>
               <button class="btn-a" onclick="saveSettings()">Save All Changes</button>
               
-              <!-- Database Info -->
+              <!-- Storage & Maintenance -->
               <div class="adm-card" style="margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border)">
-                <h3 style="font-family:var(--ff-serif);font-weight:300;margin-bottom:1rem">Database Storage</h3>
-                <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
-                  Your data is stored securely in Supabase cloud database. All changes are saved automatically and persist across devices.
+                <h3 style="font-family:var(--ff-serif);font-weight:300;margin-bottom:1rem">Storage & Maintenance</h3>
+                <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+                  Browser storage is limited (usually ~5MB). If you see "Storage Full" errors, you can clear all data to start fresh. 
+                  <br><strong style="color:var(--gold)">Warning: This will delete all photos, posts, and settings!</strong>
                 </p>
-                <div style="display:flex;align-items:center;gap:0.5rem;color:var(--gold);font-size:0.85rem">
-                  <span style="width:8px;height:8px;background:var(--gold);border-radius:50%;display:inline-block"></span>
-                  Connected to Supabase
+                <div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
+                  <button class="btn-del" onclick="clearAllData()" style="padding:0.7rem 1.4rem;border-radius:2px;background:rgba(224,90,90,0.1);color:#e05a5a;border:1px solid rgba(224,90,90,0.2)">Factory Reset (Clear All Data)</button>
+                  <div id="storage-status" style="flex:1;min-width:200px">
+                    <div style="display:flex;justify-content:space-between;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.4rem">
+                      <span>Storage Usage</span>
+                      <span id="storage-txt">0%</span>
+                    </div>
+                    <div style="width:100%;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+                      <div id="storage-fill" style="height:100%;background:var(--gold);width:0%;transition:width 0.4s ease"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -592,8 +601,6 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   <script src="hero-3d.js"></script>
   <script src="app.js"></script>
 </body>
